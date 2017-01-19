@@ -6,6 +6,7 @@ class SpatialKey(object):
     def __repr__(self):
         return "SpatialKey(%d, %d)" % (self.col, self.row)
 
+
 class SpaceTimeKey(object):
     def __init__(self, col, row, instant):
         self.col = col
