@@ -70,7 +70,7 @@ class Singleband(S3GeoTiffIOTest, unittest.TestCase):
 
     def read_singleband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
-        result = self.s3_geotiff.get_spatial(self.bucket, self.key, opt)
+        result = self.s3_geotiff.get_spatial(self.bucket, self.key, opt)[0]
 
         return [tile[1] for tile in result.collect()]
 
@@ -124,7 +124,7 @@ class Multiband(S3GeoTiffIOTest, unittest.TestCase):
 
     def read_multiband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
-        result = self.s3_geotiff.get_spatial_multiband(self.bucket, self.key, opt)
+        result = self.s3_geotiff.get_spatial_multiband(self.bucket, self.key, opt)[0]
 
         return [tile[1] for tile in result.collect()]
 

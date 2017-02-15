@@ -1,21 +1,8 @@
-from pyspark import SparkConf, SparkContext, RDD
-from pyspark.serializers import AutoBatchedSerializer
+from geopyspark.geotrellis import decode_java_rdd
 from py4j.java_gateway import java_import
-from geopyspark.avroserializer import AvroSerializer
-from geopyspark.avroregistry import AvroRegistry
 
 
-class GeoTiffRDD:
-    def _decode_java_rdd(self, java_rdd, schema, avroregistry):
-        if avroregistry is None:
-            ser = AvroSerializer(schema)
-        else:
-            ser = AvroSerializer(schema, avroregistry)
-
-        return RDD(java_rdd, self.pysc, AutoBatchedSerializer(ser))
-
-
-class HadoopGeoTiffRDD(GeoTiffRDD):
+class HadoopGeoTiffRDD(object):
     def __init__(self, pysc, avroregistry=None):
 
         self.pysc = pysc
@@ -34,7 +21,7 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.readSpatialSingleband(path, options, self._sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return decode_java_rdd(self.pysc, result._1(), result._2(), self.avroregistry)
 
     def get_spatial_multiband(self, path, options=None):
         if options is None:
@@ -42,7 +29,7 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.readSpatialMultiband(path, options, self._sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return decode_java_rdd(self.pysc, result._1(), result._2(), self.avroregistry)
 
     def get_spacetime(self, path, options=None):
         if options is None:
@@ -50,7 +37,7 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.readSpaceTimeSingleband(path, options, self._sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return decode_java_rdd(self.pysc, result._1(), result._2(), self.avroregistry)
 
     def get_spacetime_multiband(self, path, options=None):
         if options is None:
@@ -58,10 +45,10 @@ class HadoopGeoTiffRDD(GeoTiffRDD):
         else:
             result = self._hadoop_wrapper.readSpaceTimeMultiband(path, options, self._sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return decode_java_rdd(self.pysc, result._1(), result._2(), self.avroregistry)
 
 
-class S3GeoTiffRDD(GeoTiffRDD):
+class S3GeoTiffRDD(object):
     def __init__(self, pysc, avroregistry=None):
 
         self.pysc = pysc
@@ -80,7 +67,7 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.readSpatialSingleband(bucket, prefix, options, self._sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return decode_java_rdd(self.pysc, result._1(), result._2(), self.avroregistry)
 
     def get_spatial_multiband(self, bucket, prefix, options=None):
         if options is None:
@@ -88,7 +75,7 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.readSpatialMultiband(bucket, prefix, options, self._sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return decode_java_rdd(self.pysc, result._1(), result._2(), self.avroregistry)
 
     def get_spacetime(self, bucket, prefix, options=None):
         if options is None:
@@ -96,7 +83,7 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.readSpaceTimeSingleband(bucket, prefix, options, self._sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return decode_java_rdd(self.pysc, result._1(), result._2(), self.avroregistry)
 
     def get_spacetime_multiband(self, bucket, prefix, options=None):
         if options is None:
@@ -104,4 +91,4 @@ class S3GeoTiffRDD(GeoTiffRDD):
         else:
             result = self._s3_wrapper.readSpaceTimeMultiband(bucket, prefix, options, self._sc)
 
-        return self._decode_java_rdd(result._1(), result._2(), self.avroregistry)
+        return decode_java_rdd(self.pysc, result._1(), result._2(), self.avroregistry)

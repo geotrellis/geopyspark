@@ -22,18 +22,9 @@ object HadoopGeoTiffRDDOptions {
   def default = HadoopGeoTiffRDD.Options.DEFAULT
 
   def setValues(javaMap: java.util.Map[String, Any]): HadoopGeoTiffRDD.Options = {
-    //TODO: Find a better way of creating Options from python
+    val stringValues = Array("timeTag", "timeFormat")
 
-    val stringValues = List("timeTag", "timeFormat")
-    val scalaMap = javaMap.asScala
-
-    val intMap =
-      scalaMap.filterKeys(x => !(stringValues.contains(x)))
-        .mapValues(x => x.asInstanceOf[Int])
-
-    val stringMap =
-      scalaMap.filterKeys(x => stringValues.contains(x))
-        .mapValues(x => x.asInstanceOf[String])
+    val (stringMap, intMap) = GeoTrellisUtils.convertToScalaMap(javaMap, stringValues)
 
     val crs: Option[CRS] =
       if (intMap.contains("crs"))

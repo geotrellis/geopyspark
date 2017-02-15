@@ -16,16 +16,17 @@ lazy val commonSettings = Seq(
     "-language:existentials",
     "-feature"),
 
-  shellPrompt := { s => Project.extract(s).currentProject.id + " > " }
+  shellPrompt := { s => Project.extract(s).currentProject.id + " > " },
+
+  resolvers += Resolver.sonatypeRepo("releases"),
+
+  addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.3" cross CrossVersion.binary),
+  addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
 )
+
 
 lazy val root = Project("root", file(".")).
   dependsOn(geotrellisProject)
 
 lazy val geotrellisProject = Project("geotrellis-backend", file("geotrellis")).
   settings(commonSettings: _*)
-
-/*
-lazy val core = Project("core", file("core")).
-  settings(commonSettings: _*)
-*/

@@ -1,3 +1,7 @@
+from geopyspark.tests.python_test_utils import add_spark_path
+add_spark_path()
+
+from pyspark import SparkContext, RDD
 from geopyspark.geotrellis.extent import Extent
 from geopyspark.geotrellis.tile import TileArray
 from geopyspark.avroregistry import AvroRegistry
