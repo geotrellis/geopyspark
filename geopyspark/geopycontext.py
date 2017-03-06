@@ -1,16 +1,27 @@
+from geopyspark.avroregistry import AvroRegistry
+
 from pyspark import SparkContext
 from py4j.java_gateway import java_import
 
 
 class GeoPyContext(object):
-    def __init__(self, pysc):
+    def __init__(self, pysc, avroregistry=None):
         self.pysc = pysc
         self.sc = self.pysc._jsc.sc()
         self._jvm = self.pysc._gateway.jvm
 
+        if avroregistry:
+            self.avroregistry = avroregistry
+        else:
+            aself.avroregistry = AvroRegistry()
+
     @staticmethod
     def construct(*args, **kwargs):
         return GeoPyContext(SparkContext(*args, **kwargs))
+
+    @property
+    def schema_producer(self):
+        return self._jvm.geopyspark.geotrellis.SchemaProducer
 
     @property
     def hadoop_geotiff_rdd(self):
@@ -43,6 +54,9 @@ class GeoPyContext(object):
     @property
     def tile_layer_merge(self):
         return self._jvm.geopyspark.geotrellis.spark.merge.MergeMethodsWrapper
+
+    def produce_schema(key_type, value_type):
+        return self.schema_producer.getSchema(key_type, value_type)
 
     def stop(self):
         self.pysc.stop()
