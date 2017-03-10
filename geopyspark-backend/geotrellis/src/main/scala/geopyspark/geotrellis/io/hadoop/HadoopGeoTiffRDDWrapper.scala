@@ -44,43 +44,39 @@ object HadoopGeoTiffRDDOptions {
 
 
 object HadoopGeoTiffRDDWrapper {
-  def readSpatialSingleband(path: String, sc: SparkContext): (JavaRDD[Array[Byte]], String) =
-    PythonTranslator.toPython(HadoopGeoTiffRDD.spatial(path)(sc))
+  def getRDD(
+    keyType: String,
+    valueType: String,
+    path: String,
+    sc: SparkContext): (JavaRDD[Array[Byte]], String) =
+    (keyType, valueType) match {
+      case ("ProjectedExtent", "Tile") =>
+        PythonTranslator.toPython(HadoopGeoTiffRDD.spatial(path)(sc))
+      case ("ProjectedExtent", "MultibandTile") =>
+        PythonTranslator.toPython(HadoopGeoTiffRDD.spatialMultiband(path)(sc))
+      case ("TemporalProjectedExtent", "Tile") =>
+        PythonTranslator.toPython(HadoopGeoTiffRDD.temporal(path)(sc))
+      case ("TemporalProjectedExtent", "MultibandTile") =>
+        PythonTranslator.toPython(HadoopGeoTiffRDD.temporalMultiband(path)(sc))
+    }
 
-  def readSpatialSingleband(path: String, options: java.util.Map[String, Any],
+  def getRDD(
+    keyType: String,
+    valueType: String,
+    path: String,
+    options: java.util.Map[String, Any],
     sc: SparkContext): (JavaRDD[Array[Byte]], String) = {
     val hadoopOptions = HadoopGeoTiffRDDOptions.setValues(options)
 
-    PythonTranslator.toPython(HadoopGeoTiffRDD.spatial(path, hadoopOptions)(sc))
-  }
-
-  def readSpatialMultiband(path: String, sc: SparkContext): (JavaRDD[Array[Byte]], String) =
-    PythonTranslator.toPython(HadoopGeoTiffRDD.spatialMultiband(path)(sc))
-
-  def readSpatialMultiband(path: String, options: java.util.Map[String, Any],
-    sc: SparkContext): (JavaRDD[Array[Byte]], String) = {
-    val hadoopOptions = HadoopGeoTiffRDDOptions.setValues(options)
-
-    PythonTranslator.toPython(HadoopGeoTiffRDD.spatialMultiband(path, hadoopOptions)(sc))
-  }
-
-  def readSpaceTimeSingleband(path: Path, sc: SparkContext): (JavaRDD[Array[Byte]], String) =
-    PythonTranslator.toPython(HadoopGeoTiffRDD.temporal(path)(sc))
-
-  def readSpaceTimeSingleband(path: Path, options: java.util.Map[String, Any],
-    sc: SparkContext): (JavaRDD[Array[Byte]], String) = {
-    val hadoopOptions = HadoopGeoTiffRDDOptions.setValues(options)
-
-    PythonTranslator.toPython(HadoopGeoTiffRDD.temporal(path, hadoopOptions)(sc))
-  }
-
-  def readSpaceTimeMultiband(path: Path, sc: SparkContext): (JavaRDD[Array[Byte]], String) =
-    PythonTranslator.toPython(HadoopGeoTiffRDD.temporalMultiband(path)(sc))
-
-  def readSpaceTimeMultiband(path: Path, options: java.util.Map[String, Any],
-    sc: SparkContext): (JavaRDD[Array[Byte]], String) = {
-    val hadoopOptions = HadoopGeoTiffRDDOptions.setValues(options)
-
-    PythonTranslator.toPython(HadoopGeoTiffRDD.temporalMultiband(path, hadoopOptions)(sc))
+    (keyType, valueType) match {
+      case ("ProjectedExtent", "Tile") =>
+        PythonTranslator.toPython(HadoopGeoTiffRDD.spatial(path, hadoopOptions)(sc))
+      case ("ProjectedExtent", "MultibandTile") =>
+        PythonTranslator.toPython(HadoopGeoTiffRDD.spatialMultiband(path, hadoopOptions)(sc))
+      case ("TemporalProjectedExtent", "Tile") =>
+        PythonTranslator.toPython(HadoopGeoTiffRDD.temporal(path, hadoopOptions)(sc))
+      case ("TemporalProjectedExtent", "MultibandTile") =>
+        PythonTranslator.toPython(HadoopGeoTiffRDD.temporalMultiband(path, hadoopOptions)(sc))
+    }
   }
 }
