@@ -1,17 +1,14 @@
-from geopyspark.tests.python_test_utils import *
-add_spark_path()
-check_directory()
+from os import walk, path
+import unittest
+import rasterio
 
-from pyspark import SparkContext
+from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import S3GeoTiffRDD
-from geopyspark.geopycontext import GeoPyContext
 from geopyspark.tests.base_test_class import BaseTestClass
 from py4j.java_gateway import java_import
-from os import walk, path
 
-import rasterio
-import unittest
-import pytest
+
+check_directory()
 
 
 class S3GeoTiffIOTest(object):
@@ -27,24 +24,27 @@ class S3GeoTiffIOTest(object):
         rasterio_tiles = []
 
         windows = [((0, 256), (0, 256)),
-                ((256, 512), (0, 256)),
-                ((0, 256), (256, 512)),
-                ((256, 512), (256, 512))]
+                   ((256, 512), (0, 256)),
+                   ((0, 256), (256, 512)),
+                   ((256, 512), (256, 512))]
 
         for f in paths:
             with rasterio.open(f) as src:
                 if not windowed:
-                    rasterio_tiles.append(src.read())
+                    rasterio_tiles.append({'data': src.read(),
+                                           'no_data_value': src.nodata})
                 else:
                     for window in windows:
-                        rasterio_tiles.append(src.read(window=window))
+                        rasterio_tiles.append(
+                            {'data': src.read(window=window),
+                             'no_data_value': src.nodata})
 
         return rasterio_tiles
 
 
 class Singleband(S3GeoTiffIOTest, BaseTestClass):
     java_import(BaseTestClass.geopysc._jvm,
-            "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
+                "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
 
     mock_wrapper = BaseTestClass.geopysc._jvm.MockS3ClientWrapper
     client = mock_wrapper.mockClient()
@@ -63,7 +63,11 @@ class Singleband(S3GeoTiffIOTest, BaseTestClass):
 
     def read_singleband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
-        result = self.s3_geotiff.get_spatial(self.bucket, self.key, opt)
+        result = self.s3_geotiff.get_rdd("spatial",
+                                         "singleband",
+                                         self.bucket,
+                                         self.key,
+                                         opt)
 
         return [tile[1] for tile in result.collect()]
 
@@ -73,7 +77,8 @@ class Singleband(S3GeoTiffIOTest, BaseTestClass):
         rasterio_tiles = self.read_geotiff_rasterio([self.file_path], False)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x == y).all())
+            self.assertTrue((x['data'] == y['data']).all())
+            self.assertEqual(x['no_data_value'], y['no_data_value'])
 
     def windowed_result_checker(self, windowed_tiles):
         self.assertEqual(len(windowed_tiles), 4)
@@ -85,12 +90,13 @@ class Singleband(S3GeoTiffIOTest, BaseTestClass):
         self.windowed_result_checker(geotrellis_tiles)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x == y).all())
+            self.assertTrue((x['data'] == y['data']).all())
+            self.assertEqual(x['no_data_value'], y['no_data_value'])
 
 
 class Multiband(S3GeoTiffIOTest, BaseTestClass):
     java_import(BaseTestClass.geopysc._jvm,
-            "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
+                "geopyspark.geotrellis.testkit.MockS3ClientWrapper")
 
     mock_wrapper = BaseTestClass.geopysc._jvm.MockS3ClientWrapper
     client = mock_wrapper.mockClient()
@@ -108,7 +114,11 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
 
     def read_multiband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
-        result = self.s3_geotiff.get_spatial_multiband(self.bucket, self.key, opt)
+        result = self.s3_geotiff.get_rdd("spatial",
+                                         "multiband",
+                                         self.bucket,
+                                         self.key,
+                                         opt)
 
         return [tile[1] for tile in result.collect()]
 
@@ -117,7 +127,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
         rasterio_tiles = self.read_geotiff_rasterio([self.file_path], False)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x == y).all())
+            self.assertTrue((x['data'] == y['data']).all())
 
     def windowed_result_checker(self, windowed_tiles):
         self.assertEqual(len(windowed_tiles), 4)
@@ -129,7 +139,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
         self.windowed_result_checker(geotrellis_tiles)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x == y).all())
+            self.assertTrue((x['data'] == y['data']).all())
 
 
 if __name__ == "__main__":

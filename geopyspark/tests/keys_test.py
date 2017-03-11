@@ -1,107 +1,73 @@
-from geopyspark.tests.python_test_utils import add_spark_path
-add_spark_path()
+import unittest
 
-from pyspark import SparkContext, RDD
+from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
 from py4j.java_gateway import java_import
-from geopyspark.geotrellis.keys import SpatialKey, SpaceTimeKey
 from geopyspark.avroserializer import AvroSerializer
-from geopyspark.avroregistry import AvroRegistry
 from geopyspark.tests.base_test_class import BaseTestClass
-
-import unittest
-import pytest
 
 
 class SpatialKeySchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.SpatialKeyWrapper"
-    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
-    def get_rdd(self):
-        sc = BaseTestClass.pysc._jsc.sc()
-        ew = BaseTestClass.pysc._gateway.jvm.SpatialKeyWrapper
+    expected_keys = {'col': 7, 'row': 3}
 
-        tup = ew.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    sc = BaseTestClass.geopysc.pysc._jsc.sc()
+    ew = BaseTestClass.geopysc.pysc._gateway.jvm.SpatialKeyWrapper
 
-        ser = AvroSerializer(schema)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    tup = ew.testOut(sc)
+    java_rdd = tup._1()
+    ser = AvroSerializer(tup._2())
 
-    def get_skeys(self):
-        (skeys, schema) = self.get_rdd()
+    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    collected = rdd.first()
 
-        return skeys.collect()
+    def result_checker(self, actual_keys, expected_keys):
+        self.assertDictEqual(actual_keys, expected_keys)
 
-    def test_encoded_skeys(self):
-        (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: AvroRegistry.spatial_key_encoder(s))
+    def test_encoded_keyss(self):
+        encoded = self.rdd.map(lambda s: s)
+        actual_encoded = encoded.first()
 
-        actual_encoded = encoded.collect()
-
-        expected_encoded = [
-                {'col': 7, 'row': 3}
-                ]
-
-        for actual, expected in zip(actual_encoded, expected_encoded):
-            self.assertEqual(actual, expected)
+        self.result_checker(actual_encoded, self.expected_keys)
 
     def test_decoded_extents(self):
-        actual_skeys = self.get_skeys()
-
-        expected_skeys = [
-                SpatialKey(7, 3),
-                ]
-
-        for actual, expected in zip(actual_skeys, expected_skeys):
-            self.assertEqual(actual, expected)
+        self.assertDictEqual(self.collected, self.expected_keys)
 
 
 class SpaceTimeKeySchemaTest(BaseTestClass):
     path = "geopyspark.geotrellis.tests.schemas.SpaceTimeKeyWrapper"
-    java_import(BaseTestClass.pysc._gateway.jvm, path)
+    java_import(BaseTestClass.geopysc.pysc._gateway.jvm, path)
 
-    def get_rdd(self):
-        java_import(BaseTestClass.pysc._gateway.jvm, self.path)
-        sc = BaseTestClass.pysc._jsc.sc()
-        ew = BaseTestClass.pysc._gateway.jvm.SpaceTimeKeyWrapper
+    expected_keys = [
+        {'col': 7, 'row': 3, 'instant': 5},
+        {'col': 9, 'row': 4, 'instant': 10},
+        {'col': 11, 'row': 5, 'instant': 15}
+    ]
 
-        tup = ew.testOut(sc)
-        (java_rdd, schema) = (tup._1(), tup._2())
+    sc = BaseTestClass.geopysc.pysc._jsc.sc()
+    ew = BaseTestClass.geopysc.pysc._gateway.jvm.SpaceTimeKeyWrapper
 
-        ser = AvroSerializer(schema)
-        return (RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser)), schema)
+    tup = ew.testOut(sc)
+    java_rdd = tup._1()
+    ser = AvroSerializer(tup._2())
 
-    def get_skeys(self):
-        (skeys, schema) = self.get_rdd()
+    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    collected = rdd.collect()
 
-        return skeys.collect()
+    def result_checker(self, actual_keys, expected_keys):
+        for actual, expected in zip(actual_keys, expected_keys):
+            self.assertDictEqual(actual, expected)
 
-    def test_encoded_skeys(self):
-        (rdd, schema) = self.get_rdd()
-        encoded = rdd.map(lambda s: AvroRegistry.spacetime_key_encoder(s))
-
+    def test_encoded_keyss(self):
+        encoded = self.rdd.map(lambda s: s)
         actual_encoded = encoded.collect()
 
-        expected_encoded = [
-                {'col': 7, 'row': 3, 'instant': 5},
-                {'col': 9, 'row': 4, 'instant': 10},
-                {'col': 11, 'row': 5, 'instant': 15}
-                ]
-
-        for actual, expected in zip(actual_encoded, expected_encoded):
-            self.assertEqual(actual, expected)
+        self.result_checker(actual_encoded, self.expected_keys)
 
     def test_decoded_extents(self):
-        actual_skeys = self.get_skeys()
-
-        expected_skeys = [
-                SpaceTimeKey(7, 3, 5),
-                SpaceTimeKey(9, 4, 10),
-                SpaceTimeKey(11, 5, 15)
-                ]
-
-        for actual, expected in zip(actual_skeys, expected_skeys):
-            self.assertEqual(actual, expected)
+        self.result_checker(self.collected, self.expected_keys)
 
 
 if __name__ == "__main__":

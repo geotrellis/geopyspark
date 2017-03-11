@@ -1,64 +1,48 @@
-from py4j.java_gateway import java_import
-from geopyspark.avroserializer import AvroSerializer
-from geopyspark.singleton_base import SingletonBase
-from geopyspark.geopyrdd import GeoPyRDD
-
 import json
 
+from geopyspark.avroserializer import AvroSerializer
 
-class TileLayerMethods(metaclass=SingletonBase):
-    def __init__(self, geopysc, avroregistry=None):
+
+class TileLayerMethods(object):
+    def __init__(self, geopysc):
         self.geopysc = geopysc
-        self.avroregistry = avroregistry
 
         self._metadata_wrapper = self.geopysc.tile_layer_metadata_collecter
         self._tiler_wrapper = self.geopysc.tile_layer_methods
         self._merge_wrapper = self.geopysc.tile_layer_merge
 
     @staticmethod
-    def _format_strings(proj_params, epsg_code, wkt_string):
-
-        if proj_params:
-            return {"projParams": proj_params}
-
-        elif epsg_code:
-            if isinstance(epsg_code, int):
-                epsg_code = str(epsg_code)
-
-            return {"epsg": epsg_code}
-
-        elif wkt_string:
-            return {"wktString": wkt_string}
-
+    def _map_outputs(key_type, value_type):
+        if key_type == "spatial":
+            key = "SpatialKey"
         else:
-            return {}
+            key = "SpaceTimeKey"
 
-    @staticmethod
-    def _get_key_value_types(schema):
-
-        key = schema['fields'][0]['type']['name']
-        value = schema['fields'][1]['type'][0]['name']
-
-        if key == "ProjectedExtent":
-            key_type = "spatial"
+        if value_type == "singleband":
+            value = "Tile"
         else:
-            key_type = "spacetime"
+            value = "MultibandTile"
 
-        if value != "ArrayMultibandTile":
-            value_type = "singleband"
+        return (key, value)
+
+    def _convert_to_java_rdd(self, key_type, value_type, rdd):
+        if isinstance(rdd._jrdd_deserializer.serializer, AvroSerializer):
+            ser = rdd._jrdd_deserializer.serializer
+            dumped = rdd.map(lambda value: ser.dumps(value))
+            schema = rdd._jrdd_deserializer.serializer.schema_string
         else:
-            value_type = "multiband"
+            ser = self.geopysc.create_serializer(key_type, value_type)
+            reserialized_rdd = rdd._reserialize(ser)
+            avro_ser = reserialized_rdd._jrdd_deserializer.serializer
 
-        return (key_type, value_type)
+            dumped = reserialized_rdd.map(lambda x: avro_ser.dumps(x))
+            schema = reserialized_rdd._jrdd_deserializer.serializer.schema_string
 
-    def _convert_to_java_rdd(self, rdd):
-        schema = rdd.schema
-        ser = AvroSerializer(schema, self.avroregistry)
-        dumped = rdd.map(lambda value: ser.dumps(value, schema))
-
-        return dumped._to_java_object_rdd()
+        return (dumped._to_java_object_rdd(), schema)
 
     def collect_metadata(self,
+                         key_type,
+                         value_type,
                          rdd,
                          extent,
                          tile_layout,
@@ -66,92 +50,114 @@ class TileLayerMethods(metaclass=SingletonBase):
                          epsg_code=None,
                          wkt_string=None):
 
-        schema_json = json.loads(rdd.schema)
+        key = self.geopysc.map_key_input(key_type, False)
+        value = self.geopysc.map_value_input(value_type)
 
-        result = self._format_strings(proj_params, epsg_code, wkt_string)
-        types = self._get_key_value_types(schema_json)
-        java_rdd = self._convert_to_java_rdd(rdd)
+        (java_rdd, schema) = self._convert_to_java_rdd(key, value, rdd)
 
-        metadata = self._metadata_wrapper.collectPythonMetadata(types[0],
-                                                                types[1],
+        if proj_params:
+            output_crs = {"projParams": proj_params}
+        elif epsg_code:
+            if isinstance(epsg_code, int):
+                epsg_code = str(epsg_code)
+                output_crs = {"epsg": epsg_code}
+            elif wkt_string:
+                output_crs = {"wktString": wkt_string}
+            else:
+                output_crs = {}
+
+        metadata = self._metadata_wrapper.collectPythonMetadata(key_type,
+                                                                value_type,
                                                                 java_rdd.rdd(),
-                                                                rdd.schema,
+                                                                schema,
                                                                 extent,
                                                                 tile_layout,
-                                                                result)
+                                                                output_crs)
 
         return json.loads(metadata)
 
     def cut_tiles(self,
+                  key_type,
+                  value_type,
                   rdd,
                   tile_layer_metadata,
                   resample_method=None):
 
-        schema_json = json.loads(rdd.schema)
-        types = self._get_key_value_types(schema_json)
-        java_rdd = self._convert_to_java_rdd(rdd)
+        key = self.geopysc.map_key_input(key_type, False)
+        value = self.geopysc.map_value_input(value_type)
+
+        (java_rdd, schema) = self._convert_to_java_rdd(key, value, rdd)
 
         if resample_method is None:
             resample_dict = {}
         else:
             resample_dict = {"resampleMethod": resample_method}
 
-        result = self._tiler_wrapper.cutTiles(types[0],
-                                              types[1],
+        result = self._tiler_wrapper.cutTiles(key_type,
+                                              value_type,
                                               java_rdd.rdd(),
-                                              rdd.schema,
+                                              schema,
                                               json.dumps(tile_layer_metadata),
                                               resample_dict)
 
-        return GeoPyRDD(result._1(),
-                        self.geopysc,
-                        result._2(),
-                        self.avroregistry)
+        (out_key, out_value) = self._map_outputs(key_type, value_type)
+
+        return self.geopysc.avro_rdd_to_python(out_key,
+                                               out_value,
+                                               result._1(),
+                                               result._2())
 
     def tile_to_layout(self,
+                       key_type,
+                       value_type,
                        rdd,
-                       tile_layout_metadata,
+                       tile_layer_metadata,
                        resample_method=None):
 
-        schema_json = json.loads(rdd.schema)
-        types = self._get_key_value_types(schema_json)
-        java_rdd = self._convert_to_java_rdd(rdd)
+        key = self.geopysc.map_key_input(key_type, False)
+        value = self.geopysc.map_value_input(value_type)
+
+        (java_rdd, schema) = self._convert_to_java_rdd(key, value, rdd)
 
         if resample_method is None:
             resample_dict = {}
         else:
             resample_dict = {"resampleMethod": resample_method}
 
-        result = self._tiler_wrapper.tileToLayout(types[0],
-                                                  types[1],
+        result = self._tiler_wrapper.tileToLayout(key_type,
+                                                  value_type,
                                                   java_rdd.rdd(),
-                                                  rdd.schema,
+                                                  schema,
                                                   json.dumps(tile_layer_metadata),
                                                   resample_dict)
 
-        return GeoPyRDD(result._1(),
-                        self.geopysc,
-                        result._2(),
-                        self.avroregistry)
+        (out_key, out_value) = self._map_outputs(key_type, value_type)
+
+        return self.geopysc.avro_rdd_to_python(out_key,
+                                               out_value,
+                                               result._1(),
+                                               result._2())
 
     def merge(self,
+              key_type,
+              value_type,
               rdd_1,
               rdd_2):
 
-        schema_json = json.loads(rdd_1.schema)
-        types = self._get_key_value_types(schema_json)
+        key = self.geopysc.map_key_input(key_type, False)
+        value = self.geopysc.map_value_input(value_type)
 
-        java_rdd_1 = self._convert_to_java_rdd(rdd_1)
-        java_rdd_2 = self._convert_to_java_rdd(rdd_2)
+        (java_rdd_1, schema_1) = self._convert_to_java_rdd(key, value, rdd_1)
+        (java_rdd_2, schema_2) = self._convert_to_java_rdd(key, value, rdd_2)
 
-        result = self._merge_wrapper.merge(types[0],
-                                           types[1],
+        result = self._merge_wrapper.merge(key_type,
+                                           value_type,
                                            java_rdd_1.rdd(),
-                                           rdd_1.schema,
+                                           schema_1,
                                            java_rdd_2.rdd(),
-                                           rdd_2.schema)
+                                           schema_2)
 
-        return GeoPyRDD(result._1(),
-                        self.geopysc,
-                        result._2(),
-                        self.avroregistry)
+        return self.geopysc.avro_rdd_to_python(key,
+                                               value,
+                                               result._1(),
+                                               result._2())

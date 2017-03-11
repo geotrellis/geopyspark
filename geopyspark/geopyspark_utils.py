@@ -1,7 +1,7 @@
-import os
 import glob
 import sys
 
+import os
 from os import path
 from pkg_resources import resource_filename
 
@@ -51,6 +51,6 @@ def setup_environment():
     os.environ["PYSPARK_DRIVER_PYTHON"] = "python3"
     os.environ["PYSPARK_SUBMIT_ARGS"] = "--jars {} \
             --driver-class-path {} \
-            --driver-memory 4G \
-            --executor-memory 4G \
+            --driver-memory 8G \
+            --executor-memory 8G \
             pyspark-shell".format(jar_string, backend_jar)

@@ -1,13 +1,8 @@
+import os
 from os import path
+
 from zipfile import ZipFile as zipped
 
-import os
-import sys
-
-
-def add_spark_path():
-    spark_home = os.environ['SPARK_HOME']
-    sys.path.append(os.path.join(spark_home, 'python'))
 
 def geotiff_test_path(file_test_path):
     root_geotiff_dir = "geopyspark/tests/data_files/geotiff_test_files/"

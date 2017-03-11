@@ -1,11 +1,7 @@
-from pyspark import SparkContext
-from geopyspark.geopycontext import GeoPyContext
-
 import unittest
-import pytest
+
+from geopyspark.geopycontext import GeoPyContext
 
 
 class BaseTestClass(unittest.TestCase):
-    pysc = SparkContext(master="local[*]",
-                        appName="test")
-    geopysc = GeoPyContext(pysc)
+    geopysc = GeoPyContext(master="local[*]", appName="test")

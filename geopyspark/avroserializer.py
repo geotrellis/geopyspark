@@ -1,60 +1,64 @@
-from pyspark.serializers import Serializer, FramedSerializer
-from geopyspark.avroregistry import AvroRegistry
-
 import io
 import avro
 import avro.io
 
+from pyspark.serializers import Serializer, FramedSerializer
+
 
 class AvroSerializer(FramedSerializer):
     def __init__(self,
-            schema_json,
-            avroregistry=None):
+                 schema,
+                 decoding_method=None,
+                 encoding_method=None):
 
-        self._schema_json = schema_json
+        self.schema_string = schema
 
-        if avroregistry:
-            self.avroregistry = avroregistry
+        if decoding_method:
+            self.decoding_method = decoding_method
         else:
-            self.avroregistry = AvroRegistry()
+            self.decoding_method = None
 
-        self._decoding_method = None
-        self._encoding_method = None
+        if encoding_method:
+            self.encoding_method = encoding_method
+        else:
+            self.encoding_method = None
 
+    @property
     def schema(self):
-        return avro.schema.Parse(self._schema_json)
+        return avro.schema.Parse(self.schema_string)
 
+    @property
     def schema_name(self):
         return self.schema().name
 
+    @property
     def schema_dict(self):
         import json
 
-        return json.loads(self._schema_json)
+        return json.loads(self.schema_string)
 
+    @property
     def reader(self):
-        return avro.io.DatumReader(self.schema())
+        return avro.io.DatumReader(self.schema)
 
+    @property
     def datum_writer(self):
-        return avro.io.DatumWriter(self.schema())
+        return avro.io.DatumWriter(self.schema)
 
     """
     Serialize an object into a byte array.
     When batching is used, this will be called with an array of objects.
     """
-    def dumps(self, obj, schema):
-        s = avro.schema.Parse(schema)
-
-        writer = avro.io.DatumWriter(s)
+    def dumps(self, obj):
         bytes_writer = io.BytesIO()
 
         encoder = avro.io.BinaryEncoder(bytes_writer)
 
-        if self._encoding_method is None:
-            self._encoding_method = self.avroregistry.get_encoder(obj)
-
-        datum = self._encoding_method(obj)
-        writer.write(datum, encoder)
+        if self.encoding_method:
+            datum = self.encoding_method(obj)
+            self.datum_writer.write(datum, encoder)
+        else:
+            self.datum_writer.write(obj, encoder)
 
         return bytes_writer.getvalue()
 
@@ -63,13 +67,11 @@ class AvroSerializer(FramedSerializer):
     """
     def loads(self, obj):
         buf = io.BytesIO(obj)
+
         decoder = avro.io.BinaryDecoder(buf)
-        i = self.reader().read(decoder)
+        schema_dict = self.reader.read(decoder)
 
-        if self._decoding_method is None:
-            self._decoding_method = self.avroregistry.get_decoder(name=self.schema_name(),
-                    schema_dict=self.schema_dict())
-
-        result = self._decoding_method(i)
-
-        return [result]
+        if self.decoding_method:
+            return [self.decoding_method(schema_dict)]
+        else:
+            return [schema_dict]

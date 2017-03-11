@@ -1,6 +1,6 @@
 package geopyspark.geotrellis.spark.tiling
 
-import geopyspark.geotrellis.GeoTrellisUtils._
+import geopyspark.geotrellis._
 
 import geotrellis.raster.resample._
 import geotrellis.spark.tiling._
@@ -40,26 +40,19 @@ object TilerOptions {
         else if (x == "Min")
           Min
         else
-          throw new Exception(s"$x, Is not a known sampling method")
+          throw new Exception(s"$x, is not a known sampling method")
     }
 
   def setValues(javaMap: java.util.Map[String, Any]): Tiler.Options = {
     val stringValues = Array("resampleMethod", "partitioner")
-    val scalaMap = javaMap.asScala
-
-    val intMap =
-      scalaMap.filterKeys(x => !(stringValues.contains(x)))
-        .mapValues(x => x.asInstanceOf[Int])
-
-    val stringMap =
-      scalaMap.filterKeys(x => stringValues.contains(x))
-        .mapValues(x => x.asInstanceOf[String])
+    val (stringMap, intMap) = GeoTrellisUtils.convertToScalaMap(javaMap, stringValues)
 
     val resampleMethod = getResampleMethod(stringMap.get("resampleMethod"))
 
     val partitioner: Option[Partitioner] =
-      stringMap.get("partitioer") match {
+      stringMap.get("partitioner") match {
         case None => None
+
         case Some(x) =>
           intMap.get("numPartitions") match {
             case None => None
@@ -67,7 +60,7 @@ object TilerOptions {
               if (x == "HashPartitioner")
                 Some(new HashPartitioner(num))
               else
-                throw new Exception(s"$x, Is not a known Partitioner")
+                throw new Exception(s"$x, is not a known Partitioner")
           }
       }
 

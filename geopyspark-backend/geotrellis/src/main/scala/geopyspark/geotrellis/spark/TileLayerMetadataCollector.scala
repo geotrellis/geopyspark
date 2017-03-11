@@ -63,8 +63,7 @@ object TileLayerMetadataCollector {
     pythonExtent: java.util.Map[String, Double],
     pythonTileLayout: java.util.Map[String, Int],
     crsJavaMap: java.util.Map[String, String]
-  ): String = {
-
+  ): String =
     (valueType, keyType) match {
       case ("spatial", "singleband") =>
         createCollection[ProjectedExtent, Tile, SpatialKey](
@@ -95,5 +94,4 @@ object TileLayerMetadataCollector {
           pythonTileLayout,
           crsJavaMap)
     }
-  }
 }

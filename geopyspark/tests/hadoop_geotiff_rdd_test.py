@@ -1,17 +1,13 @@
-from geopyspark.tests.python_test_utils import *
-add_spark_path()
-check_directory()
-
-from pyspark import SparkContext
-from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
-from geopyspark.geopycontext import GeoPyContext
-from geopyspark.tests.base_test_class import BaseTestClass
-from os import walk, path
-
-import rasterio
 import unittest
-import pytest
-import os
+from os import walk, path
+import rasterio
+
+from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
+from geopyspark.geotrellis.geotiff_rdd import HadoopGeoTiffRDD
+from geopyspark.tests.base_test_class import BaseTestClass
+
+
+check_directory()
 
 
 class GeoTiffIOTest(object):
@@ -27,17 +23,20 @@ class GeoTiffIOTest(object):
         rasterio_tiles = []
 
         windows = [((0, 256), (0, 256)),
-                ((256, 512), (0, 256)),
-                ((0, 256), (256, 512)),
-                ((256, 512), (256, 512))]
+                   ((256, 512), (0, 256)),
+                   ((0, 256), (256, 512)),
+                   ((256, 512), (256, 512))]
 
         for f in paths:
             with rasterio.open(f) as src:
                 if not windowed:
-                    rasterio_tiles.append(src.read())
+                    rasterio_tiles.append({'data': src.read(),
+                                           'no_data_value': src.nodata})
                 else:
                     for window in windows:
-                        rasterio_tiles.append(src.read(window=window))
+                        rasterio_tiles.append(
+                            {'data': src.read(window=window),
+                             'no_data_value': src.nodata})
 
         return rasterio_tiles
 
@@ -50,9 +49,14 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:
-            result = self.hadoop_geotiff.get_spatial(self.dir_path)
+            result = self.hadoop_geotiff.get_rdd("spatial",
+                                                 "singleband",
+                                                 self.dir_path)
         else:
-            result = self.hadoop_geotiff.get_spatial(self.dir_path, options)
+            result = self.hadoop_geotiff.get_rdd("spatial",
+                                                 "singleband",
+                                                 self.dir_path,
+                                                 options)
 
         return [tile[1] for tile in result.collect()]
 
@@ -63,7 +67,8 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
         rasterio_tiles = self.read_geotiff_rasterio(file_paths, False)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x == y).all())
+            self.assertTrue((x['data'] == y['data']).all())
+            self.assertEqual(x['no_data_value'], y['no_data_value'])
 
     def windowed_result_checker(self, windowed_tiles):
         self.assertEqual(len(windowed_tiles), 24)
@@ -77,7 +82,8 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
         self.windowed_result_checker(geotrellis_tiles)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x == y).all())
+            self.assertTrue((x['data'] == y['data']).all())
+            self.assertEqual(x['no_data_value'], y['no_data_value'])
 
 
 class Multiband(GeoTiffIOTest, BaseTestClass):
@@ -87,9 +93,13 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
     def read_multiband_geotrellis(self, options=None):
         if options is None:
-            result = self.hadoop_geotiff.get_spatial_multiband(self.dir_path)
+            result = self.hadoop_geotiff.get_rdd("spatial",
+                                                 "multiband",
+                                                 self.dir_path)
         else:
-            result = self.hadoop_geotiff.get_spatial_multiband(self.dir_path, options)
+            result = self.hadoop_geotiff.get_rdd("spatial",
+                                                 "multiband",
+                                                 self.dir_path, options)
 
         return [tile[1] for tile in result.collect()]
 
@@ -100,7 +110,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         rasterio_tiles = self.read_geotiff_rasterio(file_paths, False)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x == y).all())
+            self.assertTrue((x['data'] == y['data']).all())
 
     def windowed_result_checker(self, windowed_tiles):
         self.assertEqual(len(windowed_tiles), 4)
@@ -115,8 +125,9 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         self.windowed_result_checker(geotrellis_tiles)
 
         for x, y in zip(geotrellis_tiles, rasterio_tiles):
-            self.assertTrue((x == y).all())
+            self.assertTrue((x['data'] == y['data']).all())
 
 
 if __name__ == "__main__":
+
     unittest.main()

@@ -7,7 +7,10 @@ import geotrellis.spark.io.cassandra._
 import geotrellis.spark.io.file._
 import geotrellis.spark.io.hadoop._
 import geotrellis.spark.io.hbase._
+import geotrellis.spark.io.json._
 import geotrellis.spark.io.s3._
+
+import spray.json._
 
 import org.apache.accumulo.core.client.security.tokens.PasswordToken
 import org.apache.spark._
@@ -21,16 +24,16 @@ abstract class AttributeStoreWrapper {
 
   def header(name: String, zoom: Int): Array[String]
 
-  def metadataSpatial(name: String, zoom: Int): TileLayerMetadataWrapper[SpatialKey] = {
+  def metadataSpatial(name: String, zoom: Int): String = {
     val id = LayerId(name, zoom)
     val md = attributeStore.readMetadata[TileLayerMetadata[SpatialKey]](id)
-    new TileLayerMetadataWrapper(md)
+    md.toJson.compactPrint
   }
 
-  def metadataSpaceTime(name: String, zoom: Int): TileLayerMetadataWrapper[SpaceTimeKey] = {
+  def metadataSpaceTime(name: String, zoom: Int): String = {
     val id = LayerId(name, zoom)
     val md = attributeStore.readMetadata[TileLayerMetadata[SpaceTimeKey]](id)
-    new TileLayerMetadataWrapper(md)
+    md.toJson.compactPrint
   }
 }
 

@@ -1,7 +1,6 @@
 package geopyspark.geotrellis.spark.tiling
 
 import geopyspark.geotrellis._
-import geopyspark.geotrellis.GeoTrellisUtils._
 
 import geotrellis.util._
 import geotrellis.proj4._
@@ -29,17 +28,18 @@ import scala.reflect.ClassTag
 
 
 object TilerMethodsWrapper {
-  private def _cutTiles[
-  K: GetComponent[?, ProjectedExtent]: (? => TilerKeyMethods[K, K2]): AvroRecordCodec: ClassTag,
-  V <: CellGrid: AvroRecordCodec: ClassTag: (? => TileMergeMethods[V]): (? => TilePrototypeMethods[V]),
-  K2: Boundable: SpatialComponent: ClassTag: AvroRecordCodec: JsonFormat
+  private def cutRDDTiles[
+    K: GetComponent[?, ProjectedExtent]: (? => TilerKeyMethods[K, K2]): AvroRecordCodec: ClassTag,
+    V <: CellGrid: AvroRecordCodec: ClassTag: (? => TileMergeMethods[V]): (? => TilePrototypeMethods[V]),
+    K2: Boundable: SpatialComponent: ClassTag: AvroRecordCodec: JsonFormat
   ](
     returnedRdd: RDD[Array[Byte]],
     schema: String,
     returnedMetadata: String,
     resampleMap: java.util.Map[String, String]
   ): (JavaRDD[Array[Byte]], String) = {
-    val rdd: RDD[(K, V)] = PythonTranslator.fromPython[(K, V)](returnedRdd, Some(schema))
+    val rdd: RDD[(K, V)] =
+      PythonTranslator.fromPython[(K, V)](returnedRdd, Some(schema))
 
     val metadataAST = returnedMetadata.parseJson
     val metadata = metadataAST.convertTo[TileLayerMetadata[K2]]
@@ -50,8 +50,8 @@ object TilerMethodsWrapper {
       if (scalaMap.isEmpty)
         rdd.cutTiles(metadata)
       else {
-        val resampleMethod = TilerOptions
-          .getResampleMethod(scalaMap.get("resampleMethod"))
+        val resampleMethod =
+          TilerOptions.getResampleMethod(scalaMap.get("resampleMethod"))
 
         rdd.cutTiles(metadata, resampleMethod)
       }
@@ -69,32 +69,32 @@ object TilerMethodsWrapper {
   ): (JavaRDD[Array[Byte]], String) =
     (keyType, valueType) match {
       case ("spatial", "singleband") =>
-        _cutTiles[ProjectedExtent, Tile, SpatialKey](
+        cutRDDTiles[ProjectedExtent, Tile, SpatialKey](
           returnedRdd,
           schema,
           returnedMetadata,
           resampleMap)
       case ("spatial", "multiband") =>
-        _cutTiles[ProjectedExtent, MultibandTile, SpatialKey](
+        cutRDDTiles[ProjectedExtent, MultibandTile, SpatialKey](
           returnedRdd,
           schema,
           returnedMetadata,
           resampleMap)
       case ("spacetime", "singleband") =>
-        _cutTiles[TemporalProjectedExtent, Tile, SpaceTimeKey](
+        cutRDDTiles[TemporalProjectedExtent, Tile, SpaceTimeKey](
           returnedRdd,
           schema,
           returnedMetadata,
           resampleMap)
       case ("spacetime", "multiband") =>
-        _cutTiles[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
+        cutRDDTiles[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
           returnedRdd,
           schema,
           returnedMetadata,
           resampleMap)
     }
 
-  private def _tileToLayout[
+  private def toLayout[
     K: GetComponent[?, ProjectedExtent]: (? => TilerKeyMethods[K, K2]): AvroRecordCodec: ClassTag,
     V <: CellGrid: AvroRecordCodec: ClassTag: (? => TileMergeMethods[V]): (? => TilePrototypeMethods[V]),
     K2: Boundable: SpatialComponent: ClassTag: AvroRecordCodec: JsonFormat
@@ -130,25 +130,25 @@ object TilerMethodsWrapper {
   ): (JavaRDD[Array[Byte]], String) =
     (keyType, valueType) match {
       case ("spatial", "singleband") =>
-        _tileToLayout[ProjectedExtent, Tile, SpatialKey](
+        toLayout[ProjectedExtent, Tile, SpatialKey](
           returnedRdd,
           schema,
           returnedMetadata,
           options)
       case ("spatial", "multiband") =>
-        _tileToLayout[ProjectedExtent, MultibandTile, SpatialKey](
+        toLayout[ProjectedExtent, MultibandTile, SpatialKey](
           returnedRdd,
           schema,
           returnedMetadata,
           options)
       case ("spacetime", "singleband") =>
-        _tileToLayout[TemporalProjectedExtent, Tile, SpaceTimeKey](
+        toLayout[TemporalProjectedExtent, Tile, SpaceTimeKey](
           returnedRdd,
           schema,
           returnedMetadata,
           options)
       case ("spacetime", "multiband") =>
-        _tileToLayout[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
+        toLayout[TemporalProjectedExtent, MultibandTile, SpaceTimeKey](
           returnedRdd,
           schema,
           returnedMetadata,
