@@ -32,8 +32,15 @@ class RasterRDD(object):
         tile_size -- Pixel dimensions of each tile, if not using layout
         """
 
-        ret = self.srdd.collect_metadata(crs, json.dumps(extent), json.dumps(layout), tile_size)
-        return json.loads(ret)
+        if not crs:
+            crs = ""
+
+        if extent and layout:
+            json_metadata = self.srdd.collectMetadata(extent, layout, crs)
+        else:
+            json_metadata = self.srdd.collectMetadata("{}".format(tile_size), crs)
+
+        return json.loads(json_metadata)
 
     def reproject(self, target_crs, resample_method=NEARESTNEIGHBOR):
         """Reproject every individual raster to target_crs, does not sample past tile boundary"""
