@@ -1,5 +1,7 @@
-from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, FLOAT
 import json
+
+from geopyspark.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, FLOAT, TILE
+
 
 class RasterRDD(object):
     """Holds an RDD of GeoTrellis rasters"""
@@ -9,16 +11,27 @@ class RasterRDD(object):
         self.rdd_type = rdd_type
         self.srdd = srdd
 
+    @classmethod
+    def from_numpy_rdd(cls, geopysc, rdd_type, numpy_rdd):
+        key = geopysc.map_key_input(rdd_type, False)
+
+        schema = geopysc.create_schema(key)
+        ser = geopysc.create_tuple_serializer(schema, key_type=None, value_type=TILE)
+        reserialized_rdd = numpy_rdd._reserialize(ser)
+
+        if key == "ProjectedExtent":
+            srdd = geopysc._projected_raster_rdd.apply(reserialized_rdd._jrdd, schema)
+        else:
+            srdd = geopysc._temporal_raster_rdd.apply(reserialized_rdd._jrdd, schema)
+
+        return cls(geopysc, key, srdd)
+
     def to_numpy_rdd(self):
         result = self.srdd.toAvroRDD()
-        ser = self.geopysc.create_tuple_serializer(result._2(), value_type="Tile")
+        ser = self.geopysc.create_tuple_serializer(result._2(), value_type=TILE)
         return self.geopysc.create_python_rdd(result._1(), ser)
 
-    @static
-    def from_numpy_rdd(numpy_rdd):
-        pass
-
-    def collect_metadata(self, crs=None, extent=None, layout=None, tile_size=256):
+    def collect_metadata(self, extent=None, layout=None, crs=None, tile_size=256):
         """Iterate over RDD records and generate layer metadata desribing the contained rasters.
 
         Keyword arguments:
@@ -28,8 +41,17 @@ class RasterRDD(object):
         tile_size -- Pixel dimensions of each tile, if not using layout
         """
 
-        ret = self.srdd.collect_metadata(crs, json.dumps(extent), json.dumps(layout), tile_size)
-        return json.loads(ret)
+        if not crs:
+            crs = ""
+
+        if extent and layout:
+            json_metadata = self.srdd.collectMetadata(extent, layout, crs)
+        elif not extent and not layout:
+            json_metadata = self.srdd.collectMetadata(str(tile_size), crs)
+        else:
+            raise TypeError("Could not collect metadata with {} and {}".format(extent, layout))
+
+        return json.loads(json_metadata)
 
     def reproject(self, target_crs, resample_method=NEARESTNEIGHBOR):
         """Reproject every individual raster to target_crs, does not sample past tile boundary"""
@@ -57,9 +79,19 @@ class TiledRasterRDD(object):
         self.rdd_type = rdd_type
         self.srdd = srdd
 
+    @property
     def layer_metadata(self):
         """Layer metadata associated with this layer"""
         return json.loads(self.srdd.layerMetadata())
+
+    @property
+    def zoom_level(self):
+        zoom = self.srdd.getZoom()
+
+        if zoom >= 0:
+            return zoom
+        else:
+            raise AttributeError("Tile layer does not have a corresponding zoom level")
 
     def to_numpy_rdd(self):
         result = self.srdd.toAvroRDD()

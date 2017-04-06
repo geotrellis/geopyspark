@@ -1,11 +1,11 @@
 import os
 import unittest
 
+from geopyspark.constants import SPATIAL
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.tile_layer import reproject_to_layout, collect_metadata, tile_to_layout
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.constants import SPATIAL
 
 
 check_directory()

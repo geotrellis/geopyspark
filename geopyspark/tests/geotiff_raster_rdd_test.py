@@ -2,10 +2,10 @@ import unittest
 from os import walk, path
 import rasterio
 
+from geopyspark.constants import SPATIAL
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd, geotiff_raster_rdd
+from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.constants import SPATIAL
 
 
 check_directory()
@@ -44,7 +44,7 @@ class GeoTiffIOTest(object):
 class Multiband(GeoTiffIOTest, BaseTestClass):
     dir_path = geotiff_test_path("one-month-tiles-multiband/")
     gps = BaseTestClass.geopysc
-    result = geotiff_raster_rdd(gps, SPATIAL, dir_path)
+    result = geotiff_rdd(gps, SPATIAL, dir_path)
 
     def test_to_numpy_rdd(self, option=None):
         pyrdd = self.result.to_numpy_rdd()
@@ -59,7 +59,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         self.assertTrue('+datum=WGS84' in md['crs'])
 
     def test_collect_metadata_crs_override(self, options=None):
-        md = self.result.collect_metadata('EPSG:3857')
+        md = self.result.collect_metadata(crs='EPSG:3857')
         self.assertTrue('+proj=merc' in md['crs'])
 
     def test_cut_tiles(self, options=None):
@@ -76,5 +76,4 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
 
 
 if __name__ == "__main__":
-
     unittest.main()
