@@ -1,5 +1,7 @@
 package geopyspark.geotrellis.io
 
+import geopyspark.geotrellis._
+
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
@@ -67,33 +69,33 @@ abstract class LayerWriterWrapper {
     }
 
   def write(
-    keyType: String,
     layerName: String,
-    zoom: Int,
-    jrdd: JavaRDD[Array[Byte]],
-    schema: String,
-    returnedMetadata: String,
+    tiledRasterRDD: TiledRasterRDD[_],
     timeString: String,
     indexStrategy: String
   ): Unit ={
-    val id = LayerId(layerName, zoom)
-    val metadataAST = returnedMetadata.parseJson
+    val id = LayerId(layerName, tiledRasterRDD.getZoom)
 
-    keyType match {
-      case "SpatialKey" => {
+    tiledRasterRDD match {
+      case spatial: SpatialTiledRasterRDD => {
         val indexMethod = getSpatialIndexMethod(indexStrategy)
-        val rawRdd = PythonTranslator.fromPython[(SpatialKey, MultibandTile)](jrdd, Some(schema))
-        val rdd = ContextRDD(rawRdd, metadataAST.convertTo[TileLayerMetadata[SpatialKey]])
-        layerWriter.write(id, rdd, indexMethod)
+        layerWriter.write(id, spatial.rdd, indexMethod)
       }
-      case "SpaceTimeKey" => {
+      case temporal: TemporalTiledRasterRDD => {
         val indexMethod = getTemporalIndexMethod(timeString, indexStrategy)
-        val rawRdd = PythonTranslator.fromPython[(SpaceTimeKey, MultibandTile)](jrdd, Some(schema))
-        val rdd = ContextRDD(rawRdd, metadataAST.convertTo[TileLayerMetadata[SpaceTimeKey]])
-        layerWriter.write(id, rdd, indexMethod)
+        layerWriter.write(id, temporal.rdd, indexMethod)
       }
     }
   }
+
+  def write(
+    layerName: String,
+    tiledRasterRDD: Seq[TiledRasterRDD[_]],
+    timeString: String,
+    indexStrategy: String
+  ): Unit =
+    // TODO: Find a way to iterate through the sequence without checking the type for each tiledRasterRDD
+    tiledRasterRDD.foreach { tiledRDD => write(layerName, tiledRDD, timeString, indexStrategy) }
 }
 
 

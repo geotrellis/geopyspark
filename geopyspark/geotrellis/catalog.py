@@ -4,14 +4,16 @@ Because GeoPySpark represents all raster data as 3D numpy arrays, data that is r
 will be in a multiband format; regardless of how the data was originally formatted.
 """
 
-import json
-
 from collections import namedtuple
+from urllib.parse import urlparse
+
 from geopyspark.rdd import TiledRasterRDD
-from geopyspark.geotrellis.constants import SPATIAL, TILE, ZORDER
+from geopyspark.constants import SPATIAL, TILE, ZORDER
+
 from shapely.geometry import Polygon
 from shapely.wkt import dumps
-from urllib.parse import urlparse
+
+from py4j.java_gateway import JavaObject
 
 
 _mapped_builds = {}
@@ -445,12 +447,9 @@ def query(geopysc,
     return TiledRasterRDD(geopysc, key, srdd)
 
 def write(geopysc,
-          rdd_type,
           uri,
           layer_name,
-          layer_zoom,
-          rdd,
-          metadata,
+          tiled_raster_rdd,
           index_strategy=ZORDER,
           time_unit=None,
           options=None,
@@ -577,18 +576,19 @@ def write(geopysc,
 
     builds = _mapped_builds[uri]
 
-    key = geopysc.map_key_input(rdd_type, True)
-
-    schema = geopysc.create_schema(key)
-
     if not time_unit:
         time_unit = ""
 
-    builds.writer.write(key,
-                        layer_name,
-                        layer_zoom,
-                        rdd._jrdd,
-                        schema,
-                        json.dumps(metadata),
-                        time_unit,
-                        index_strategy)
+    if isinstance(tiled_raster_rdd, TiledRasterRDD):
+        builds.writer.write(layer_name,
+                            tiled_raster_rdd.srdd,
+                            time_unit,
+                            index_strategy)
+
+    elif isinstance(tiled_raster_rdd, JavaObject):
+        builds.writer.write(layer_name,
+                            tiled_raster_rdd,
+                            time_unit,
+                            index_strategy)
+    else:
+        raise TypeError("{} cannot be written as a GeoTrellis layer".format(tiled_raster_rdd))

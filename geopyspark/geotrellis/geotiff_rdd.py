@@ -3,6 +3,7 @@
 There is only one function found within this module at this time, geotiff_rdd.
 """
 
+from geopyspark.constants import TILE
 from geopyspark.rdd import RasterRDD
 
 def geotiff_rdd(geopysc,
@@ -111,7 +112,7 @@ def geotiff_rdd(geopysc,
                                                         options,
                                                         geopysc.sc)
 
-    ser = geopysc.create_tuple_serializer(result._2(), value_type="Tile")
+    ser = geopysc.create_tuple_serializer(result._2(), value_type=TILE)
     return geopysc.create_python_rdd(result._1(), ser)
 
 

@@ -2,10 +2,10 @@ from os import walk, path
 import unittest
 import rasterio
 
+from geopyspark.constants import SPATIAL
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.constants import SPATIAL
 from py4j.java_gateway import java_import
 
 
