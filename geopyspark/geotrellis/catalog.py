@@ -8,7 +8,7 @@ import json
 
 from collections import namedtuple
 from geopyspark.rdd import TiledRasterRDD
-from geopyspark.geotrellis.constants import SPATIAL, TILE, ZORDER
+from geopyspark.constants import SPATIAL, TILE, ZORDER
 from shapely.geometry import Polygon
 from shapely.wkt import dumps
 from urllib.parse import urlparse
