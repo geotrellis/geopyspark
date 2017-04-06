@@ -57,9 +57,19 @@ class TiledRasterRDD(object):
         self.rdd_type = rdd_type
         self.srdd = srdd
 
+    @property
     def layer_metadata(self):
         """Layer metadata associated with this layer"""
         return json.loads(self.srdd.layerMetadata())
+
+    @property
+    def zoom_level(self):
+        zoom = self.srdd.getZoom()
+
+        if zoom >= 0:
+            return zoom
+        else:
+            raise AttributeError("Tile layer does not have a corresponding zoom level")
 
     def to_numpy_rdd(self):
         result = self.srdd.toAvroRDD()
