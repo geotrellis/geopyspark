@@ -59,7 +59,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
         self.assertTrue('+datum=WGS84' in md['crs'])
 
     def test_collect_metadata_crs_override(self, options=None):
-        md = self.result.collect_metadata('EPSG:3857')
+        md = self.result.collect_metadata(crs='EPSG:3857')
         self.assertTrue('+proj=merc' in md['crs'])
 
     def test_cut_tiles(self, options=None):

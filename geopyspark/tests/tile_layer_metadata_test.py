@@ -4,8 +4,6 @@ import rasterio
 
 from geopyspark.constants import SPATIAL
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
-from geopyspark.geotrellis.tile_layer import (collect_metadata,
-                                              collect_floating_metadata)
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
 
@@ -17,7 +15,7 @@ class TileLayerMetadataTest(BaseTestClass):
     dir_path = geotiff_test_path("all-ones.tif")
 
     rdd = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, dir_path)
-    value = rdd.collect()[0]
+    value = rdd.to_numpy_rdd().collect()[0]
 
     projected_extent = value[0]
     extent = projected_extent['extent']
@@ -43,11 +41,7 @@ class TileLayerMetadataTest(BaseTestClass):
             self.assertEqual(actual, expected)
 
     def test_collection_avro_rdd(self):
-        result = collect_metadata(BaseTestClass.geopysc,
-                                  SPATIAL,
-                                  self.rdd,
-                                  self.extent,
-                                  self.layout)
+        result = self.rdd.collect_metadata(extent=self.extent, layout=self.layout)
 
         expected = [[result['layoutDefinition']['extent'],
                      result['layoutDefinition']['tileLayout']],
@@ -59,12 +53,9 @@ class TileLayerMetadataTest(BaseTestClass):
         data = rasterio.open(self.dir_path)
         tile_dict = {'data': data.read(), 'no_data_value': data.nodata}
         rasterio_rdd = self.geopysc.pysc.parallelize([(self.projected_extent, tile_dict)])
+        raster_rdd = self.geopysc.create_raster_rdd(rasterio_rdd, SPATIAL)
 
-        result = collect_metadata(BaseTestClass.geopysc,
-                                  SPATIAL,
-                                  rasterio_rdd,
-                                  self.extent,
-                                  self.layout)
+        result = raster_rdd.collect_metadata(extent=self.extent, layout=self.layout)
 
         expected = [[result['layoutDefinition']['extent'],
                      result['layoutDefinition']['tileLayout']],
@@ -73,11 +64,7 @@ class TileLayerMetadataTest(BaseTestClass):
         self.check_results(self.actual, expected)
 
     def test_collection_floating(self):
-        (_, result) = collect_floating_metadata(BaseTestClass.geopysc,
-                                                SPATIAL,
-                                                self.rdd,
-                                                self.cols,
-                                                self.rows)
+        result = self.rdd.collect_metadata(tile_size=self.cols)
 
         expected = [[result['layoutDefinition']['extent'],
                      result['layoutDefinition']['tileLayout']],
