@@ -1,3 +1,4 @@
+from geopyspark.rdd import RasterRDD
 from geopyspark.avroregistry import AvroRegistry
 from geopyspark.avroserializer import AvroSerializer
 
@@ -81,6 +82,14 @@ class GeoPyContext(object):
     def rdd_costdistance(self):
         return self._jvm.geopyspark.geotrellis.spark.costdistance.CostDistanceWrapper
 
+    @property
+    def _projected_rdd(self):
+        return self._jvm.geopyspark.geotrellis.ProjectedRasterRDD
+
+    @property
+    def _temporal_rdd(self):
+        return self._jvm.geopyspark.geotrellis.TemporalRasterRDD
+
     @staticmethod
     def map_key_input(key_type, is_boundable):
         if is_boundable:
@@ -97,6 +106,20 @@ class GeoPyContext(object):
                 return "TemporalProjectedExtent"
             else:
                 raise Exception("Could not find key type that matches", key_type)
+
+    def create_raster_rdd(self, python_rdd, rdd_type):
+        key = self.map_key_input(rdd_type, False)
+        schema = self.create_schema(key)
+
+        ser = self.create_tuple_serializer(schema, key_type=None, value_type="Tile")
+        reserialized_rdd = python_rdd._reserialize(ser)
+
+        if key == "ProjectedExtent":
+            srdd = self._projected_rdd.apply(reserialized_rdd._jrdd, schema)
+        else:
+            srdd = self._temporal_rdd.apply(reserialized_rdd._jrdd, schema)
+
+        return RasterRDD(self, key, srdd)
 
     def create_schema(self, key_type):
         return self._schema_producer.getSchema(key_type)
