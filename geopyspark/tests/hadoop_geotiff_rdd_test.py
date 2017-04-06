@@ -2,10 +2,10 @@ import unittest
 from os import walk, path
 import rasterio
 
+from geopyspark.constants import SPATIAL
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.constants import SPATIAL
 
 
 check_directory()
@@ -56,7 +56,7 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
                                  self.dir_path,
                                  maxTileSize=256)
 
-        return [tile[1] for tile in result.collect()]
+        return [tile[1] for tile in result.to_numpy_rdd().collect()]
 
     def test_whole_tiles(self):
         geotrellis_tiles = self.read_singleband_geotrellis()
@@ -99,7 +99,7 @@ class Multiband(GeoTiffIOTest, BaseTestClass):
                                  self.dir_path,
                                  options)
 
-        return [tile[1] for tile in result.collect()]
+        return [tile[1] for tile in result.to_numpy_rdd().collect()]
 
     def test_whole_tiles(self):
         geotrellis_tiles = self.read_multiband_geotrellis()

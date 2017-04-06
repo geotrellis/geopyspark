@@ -1,5 +1,7 @@
-from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, FLOAT
 import json
+
+from geopyspark.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, FLOAT
+
 
 class RasterRDD(object):
     """Holds an RDD of GeoTrellis rasters"""
@@ -14,9 +16,11 @@ class RasterRDD(object):
         ser = self.geopysc.create_tuple_serializer(result._2(), value_type="Tile")
         return self.geopysc.create_python_rdd(result._1(), ser)
 
+    '''
     @static
     def from_numpy_rdd(numpy_rdd):
         pass
+    '''
 
     def collect_metadata(self, crs=None, extent=None, layout=None, tile_size=256):
         """Iterate over RDD records and generate layer metadata desribing the contained rasters.
@@ -57,9 +61,19 @@ class TiledRasterRDD(object):
         self.rdd_type = rdd_type
         self.srdd = srdd
 
+    @property
     def layer_metadata(self):
         """Layer metadata associated with this layer"""
         return json.loads(self.srdd.layerMetadata())
+
+    @property
+    def zoom_level(self):
+        zoom = self.srdd.getZoom()
+
+        if zoom >= 0:
+            return zoom
+        else:
+            raise AttributeError("Tile layer does not have a corresponding zoom level")
 
     def to_numpy_rdd(self):
         result = self.srdd.toAvroRDD()

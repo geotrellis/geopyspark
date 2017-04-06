@@ -67,7 +67,7 @@ RESAMPLE_METHODS = [
 ZOOM = 'zoom'
 
 """Layout scheme to match resolution of source rasters"""
-FLOATING = 'float'
+FLOAT = 'float'
 
 
 """A key indexing method. Works for RDDs that contain both SpatialKeys and SpacetimeKeys."""
