@@ -9,7 +9,7 @@ import json
 import shapely.wkt
 
 from geopyspark.avroserializer import AvroSerializer
-from geopyspark.geotrellis.constants import NEARESTNEIGHBOR, TILE, SPATIAL
+from geopyspark.constants import NEARESTNEIGHBOR, TILE
 
 
 def _convert_to_java_rdd(geopysc, rdd_type, raster_rdd):
