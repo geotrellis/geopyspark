@@ -81,6 +81,14 @@ class GeoPyContext(object):
     def rdd_costdistance(self):
         return self._jvm.geopyspark.geotrellis.spark.costdistance.CostDistanceWrapper
 
+    @property
+    def _projected_raster_rdd(self):
+        return self._jvm.geopyspark.geotrellis.ProjectedRasterRDD
+
+    @property
+    def _temporal_raster_rdd(self):
+        return self._jvm.geopyspark.geotrellis.TemporalRasterRDD
+
     @staticmethod
     def map_key_input(key_type, is_boundable):
         if is_boundable:

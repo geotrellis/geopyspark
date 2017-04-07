@@ -75,19 +75,19 @@ abstract class FilteringLayerReaderWrapper()
     (keyType, valueClass) match {
       case ("SpatialKey", "geotrellis.raster.Tile") => {
         val result = layerReader.read[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id)
-        new SpatialTiledRasterRDD(MultibandTileLayerRDD(tileToMultiband[SpatialKey](result), result.metadata))
+        new SpatialTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(tileToMultiband[SpatialKey](result), result.metadata))
       }
       case ("SpatialKey", "geotrellis.raster.MultibandTile") => {
         val result = layerReader.read[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id)
-        new SpatialTiledRasterRDD(MultibandTileLayerRDD(result, result.metadata))
+        new SpatialTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(result, result.metadata))
       }
       case ("SpaceTimeKey", "geotrellis.raster.Tile") => {
         val result = layerReader.read[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id)
-        new TemporalTiledRasterRDD(MultibandTileLayerRDD(tileToMultiband[SpaceTimeKey](result), result.metadata))
+        new TemporalTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(tileToMultiband[SpaceTimeKey](result), result.metadata))
       }
       case ("SpaceTimeKey", "geotrellis.raster.MultibandTile") => {
         val result = layerReader.read[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id)
-        new TemporalTiledRasterRDD(MultibandTileLayerRDD(result, result.metadata))
+        new TemporalTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(result, result.metadata))
       }
     }
   }
@@ -153,7 +153,7 @@ abstract class FilteringLayerReaderWrapper()
 
         val result = tileToMultiband[SpatialKey](query.result)
 
-        new SpatialTiledRasterRDD(MultibandTileLayerRDD(result, query.result.metadata))
+        new SpatialTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(result, query.result.metadata))
       }
 
       case ("SpatialKey", "geotrellis.raster.MultibandTile") => {
@@ -166,7 +166,7 @@ abstract class FilteringLayerReaderWrapper()
           case None => layer
           case _ => throw new Exception("Unsupported Geometry")
         }
-        new SpatialTiledRasterRDD(query.result)
+        new SpatialTiledRasterRDD(Some(zoom), query.result)
       }
 
       case ("SpaceTimeKey", "geotrellis.raster.Tile") => {
@@ -186,7 +186,7 @@ abstract class FilteringLayerReaderWrapper()
         }
         val result = tileToMultiband[SpaceTimeKey](query2.result)
 
-        new TemporalTiledRasterRDD(MultibandTileLayerRDD(result, query2.result.metadata))
+        new TemporalTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(result, query2.result.metadata))
       }
 
       case ("SpaceTimeKey", "geotrellis.raster.MultibandTile") => {
@@ -204,7 +204,7 @@ abstract class FilteringLayerReaderWrapper()
           case Some(q) => query1.where(q)
           case None => query1
         }
-        new TemporalTiledRasterRDD(query2.result)
+        new TemporalTiledRasterRDD(Some(zoom), query2.result)
       }
     }
   }

@@ -2,10 +2,10 @@ from os import walk, path
 import unittest
 import rasterio
 
+from geopyspark.constants import SPATIAL
 from geopyspark.tests.python_test_utils import check_directory, geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import geotiff_rdd
 from geopyspark.tests.base_test_class import BaseTestClass
-from geopyspark.geotrellis.constants import SPATIAL
 from py4j.java_gateway import java_import
 
 
@@ -66,7 +66,7 @@ class Singleband(S3GeoTiffIOTest, BaseTestClass):
         self.client.putObject(self.bucket, self.key, self.data)
         result = geotiff_rdd(BaseTestClass.geopysc, SPATIAL, self.uri, opt)
 
-        return [tile[1] for tile in result.collect()]
+        return [tile[1] for tile in result.to_numpy_rdd().collect()]
 
     def test_whole_tiles(self):
 
@@ -116,7 +116,7 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
                              self.uri,
                              opt)
 
-        return [tile[1] for tile in result.collect()]
+        return [tile[1] for tile in result.to_numpy_rdd().collect()]
 
     def test_whole_tiles(self):
         geotrellis_tiles = self.read_multiband_geotrellis()

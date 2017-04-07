@@ -3,8 +3,6 @@ package geopyspark.geotrellis.io.s3
 import geopyspark.geotrellis._
 
 import geotrellis.proj4._
-import geotrellis.raster._
-import geotrellis.vector._
 import geotrellis.spark.io.s3._
 import geotrellis.spark.io.s3.testkit._
 
@@ -12,8 +10,6 @@ import scala.collection.JavaConverters._
 import java.util.Map
 
 import org.apache.spark._
-import org.apache.spark.rdd.RDD
-import org.apache.spark.api.java.JavaRDD
 
 
 object S3GeoTiffRDDOptions {
@@ -58,12 +54,13 @@ object S3GeoTiffRDDWrapper {
     keyType: String,
     bucket: String,
     prefix: String,
-    sc: SparkContext): (JavaRDD[Array[Byte]], String) =
+    sc: SparkContext
+  ): RasterRDD[_] =
     keyType match {
       case "ProjectedExtent" =>
-        PythonTranslator.toPython(S3GeoTiffRDD.spatialMultiband(bucket, prefix)(sc))
+        new ProjectedRasterRDD(S3GeoTiffRDD.spatialMultiband(bucket, prefix)(sc))
       case "TemporalProjectedExtent" =>
-        PythonTranslator.toPython(S3GeoTiffRDD.temporalMultiband(bucket, prefix)(sc))
+        new TemporalRasterRDD(S3GeoTiffRDD.temporalMultiband(bucket, prefix)(sc))
     }
 
   def getRDD(
@@ -71,14 +68,15 @@ object S3GeoTiffRDDWrapper {
     bucket: String,
     prefix: String,
     options: java.util.Map[String, Any],
-    sc: SparkContext): (JavaRDD[Array[Byte]], String) = {
+    sc: SparkContext
+  ): RasterRDD[_] = {
     val s3Options = S3GeoTiffRDDOptions.setValues(options)
 
     keyType match {
       case "ProjectedExtent" =>
-        PythonTranslator.toPython(S3GeoTiffRDD.spatialMultiband(bucket, prefix, s3Options)(sc))
+        new ProjectedRasterRDD(S3GeoTiffRDD.spatialMultiband(bucket, prefix, s3Options)(sc))
       case "TemporalProjectedExtent" =>
-        PythonTranslator.toPython(S3GeoTiffRDD.temporalMultiband(bucket, prefix, s3Options)(sc))
+        new TemporalRasterRDD(S3GeoTiffRDD.temporalMultiband(bucket, prefix, s3Options)(sc))
     }
   }
 }
