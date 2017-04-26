@@ -1,8 +1,25 @@
-from setuptools import setup
 import sys
+import os
+import subprocess
+
+from setuptools import setup
+from setuptools.command.install import install
+
 
 if sys.version_info < (3, 3):
     sys.exit("GeoPySpark does not support Python versions before 3.3")
+
+URL = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.1.0-RC1/'
+JAR = 'geotrellis-backend-assembly-0.1.0.jar'
+JAR_PATH = 'geopyspark/jars/'
+
+
+class Installer(install):
+    def run(self):
+        if not os.path.isfile(JAR_PATH):
+            subprocess.call(['curl', '-L', URL + JAR, '-o', JAR_PATH + JAR])
+        install.run(self)
+
 
 setup(
     name='geopyspark',
@@ -25,6 +42,7 @@ setup(
         'geopyspark.tests.schema_tests',
         'geopyspark.jars'
     ],
+    cmdclass={'install': Installer},
     scripts=[],
     classifiers=[
         'Development Status :: 3 - Alpha',
