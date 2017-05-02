@@ -19,9 +19,7 @@
 #
 import os
 import sys
-from geopyspark.geopyspark_utils import setup_environment
 
-setup_environment()
 sys.path.insert(0, os.path.abspath('../geopyspark/'))
 
 
