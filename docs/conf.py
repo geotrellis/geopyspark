@@ -18,9 +18,14 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+from os import path
 import sys
+import subprocess
 
-sys.path.insert(0, os.path.abspath('../geopyspark/'))
+jar = 'geotrellis-backend-assembly-0.1.0.jar'
+url = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.1.0RC1/'
+subprocess.call(['curl', '-L', url+jar, '-o', '../geopyspark/jars/' + jar])
+sys.path.insert(0, path.abspath('../'))
 
 
 # -- General configuration ------------------------------------------------
@@ -86,7 +91,8 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+#html_theme = 'alabaster'
+html_theme = 'nature'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -97,7 +103,8 @@ html_theme = 'alabaster'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
+#html_static_path = ['_static']
 
 
 # -- Options for HTMLHelp output ------------------------------------------
