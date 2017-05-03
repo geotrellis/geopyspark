@@ -22,6 +22,12 @@ from os import path
 import sys
 import subprocess
 
+if 'SPARK_HOME' not in os.environ.keys():
+    spark_url = 'http://d3kbcqa49mib13.cloudfront.net/spark-2.1.0-bin-hadoop2.7.tgz'
+    subprocess.call(['curl', '-L', spark_url, '-O'])
+    subprocess.call(['tar', '-xvf', 'spark-2.1.0-bin-hadoop2.7.tgz'])
+    os.environ['SPARK_HOME'] = './spark-2.1.0-bin-hadoop2.7/'
+
 jar = 'geotrellis-backend-assembly-0.1.0.jar'
 url = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.1.0RC1/'
 subprocess.call(['curl', '-L', url+jar, '-o', '../geopyspark/jars/' + jar])
