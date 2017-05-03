@@ -2,9 +2,8 @@ GeoPySpark
 ***********
 .. image:: https://travis-ci.org/locationtech-labs/geopyspark.svg?branch=master
    :target: https://travis-ci.org/locationtech-labs/geopyspark
-.. |build-status| image:: https://readthedocs.org/projects/geopyspark/badge/?version=latest
-   :alt: Documentation Status
-   :scale: 100%
+
+.. image:: https://readthedocs.org/projects/geopyspark/badge/?version=latest
    :target: https://geopyspark.readthedocs.io/en/latest/?badge=latest
 
 ``GeoPySpark`` provides Python bindings for working with geospatial data using `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_
@@ -97,4 +96,3 @@ Contributing
 Any kind of feedback and contributions to GeoPySpark is always welcomed.
 A CLA is required for contribution, see `Contributing <docs/contributing.rst>`_ for more
 information.
->>>>>>> Expanded README
