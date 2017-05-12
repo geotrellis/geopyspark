@@ -38,11 +38,6 @@ class LookupTest(BaseTestClass):
 
     raster_rdd = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
 
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
-
     def test_lookup_1(self):
         result = self.raster_rdd.lookup(0, 0)[0]
         n = np.sum(result['data'])

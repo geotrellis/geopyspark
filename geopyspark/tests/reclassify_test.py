@@ -2,7 +2,6 @@ import os
 import sys
 import math
 import numpy as np
-import pytest
 import unittest
 
 from geopyspark.geotrellis.rdd import RasterRDD
@@ -15,11 +14,6 @@ class ReclassifyTest(BaseTestClass):
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 10.0, 'ymax': 10.0}
 
     projected_extent = {'extent': extent, 'epsg': epsg_code}
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_all_zeros(self):
         arr = np.zeros((1, 16, 16))
@@ -149,8 +143,6 @@ class ReclassifyTest(BaseTestClass):
         for x in list(result.flatten()):
             self.assertTrue(math.isnan(x))
 
-    @pytest.mark.skipif('TRAVIS' in os.environ,
-                         reason="Encoding using methods in Main causes issues on Travis")
     def test_ignore_no_data_ints(self):
         arr = np.ones((1, 16, 16), int)
         np.fill_diagonal(arr[0], NODATAINT)
@@ -165,8 +157,6 @@ class ReclassifyTest(BaseTestClass):
 
         self.assertTrue((result == np.identity(16, int)).all())
 
-    @pytest.mark.skipif('TRAVIS' in os.environ,
-                         reason="Encoding using methods in Main causes issues on Travis")
     def test_ignore_no_data_floats(self):
         arr = np.ones((1, 4, 4))
         np.fill_diagonal(arr[0], float('nan'))

@@ -1,7 +1,6 @@
 from os import walk, path
 import unittest
 import rasterio
-import pytest
 
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.tests.python_test_utils import geotiff_test_path
@@ -54,11 +53,6 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
     in_file = open(file_path, "rb")
     data = in_file.read()
     in_file.close()
-
-    @pytest.fixture(scope='class', autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def read_multiband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)

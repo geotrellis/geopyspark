@@ -11,11 +11,6 @@ from geopyspark.tests.base_test_class import BaseTestClass
 
 class PyramidingTest(BaseTestClass):
 
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
-
     def test_correct_base(self):
         arr = np.zeros((1, 16, 16))
         epsg_code = 3857

@@ -1,7 +1,6 @@
 import os
 import unittest
 import numpy as np
-import pytest
 
 from geopyspark.geotrellis.rdd import TiledRasterRDD
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -36,11 +35,6 @@ class FocalTest(BaseTestClass):
                     'tileLayout': {'tileCols': 5, 'tileRows': 5, 'layoutCols': 2, 'layoutRows': 2}}}
 
     raster_rdd = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_focal_sum(self):
         result = self.raster_rdd.focal(

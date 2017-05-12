@@ -1,7 +1,6 @@
 import os
 import unittest
 import numpy as np
-import pytest
 
 from shapely.geometry import Point
 from geopyspark.geotrellis.rdd import TiledRasterRDD
@@ -36,11 +35,6 @@ class StitchTest(BaseTestClass):
                     'tileLayout': {'tileCols': 5, 'tileRows': 5, 'layoutCols': 2, 'layoutRows': 2}}}
 
     raster_rdd = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
-
-    @pytest.fixture(scope='class', autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_stitch(self):
         result = self.raster_rdd.stitch()

@@ -1,5 +1,4 @@
 import unittest
-import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
@@ -22,11 +21,6 @@ class ExtentSchemaTest(BaseTestClass):
         {"xmin": 1.0, "ymin": 2.0, "xmax": 3.0, "ymax": 4.0},
         {"xmin": 5.0, "ymin": 6.0, "xmax": 7.0, "ymax": 8.0}
     ]
-
-    @pytest.fixture(scope='class', autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def result_checker(self, actual_result, expected_result):
         for actual, expected in zip(actual_result, expected_result):

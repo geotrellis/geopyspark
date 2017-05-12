@@ -1,5 +1,4 @@
 import unittest
-import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
@@ -22,11 +21,6 @@ class ProjectedExtentSchemaTest(BaseTestClass):
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def result_checker(self, actual_pe, expected_pe):
         for actual, expected in zip(actual_pe, expected_pe):

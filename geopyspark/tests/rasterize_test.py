@@ -2,8 +2,6 @@ import os
 import unittest
 import numpy as np
 
-import pytest
-
 from shapely.geometry import Polygon
 from geopyspark.tests.base_test_class import BaseTestClass
 from geopyspark.geotrellis.rdd import TiledRasterRDD
@@ -12,11 +10,6 @@ from geopyspark.geotrellis.constants import SPATIAL
 
 class RasterizeTest(BaseTestClass):
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 11.0, 'ymax': 11.0}
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_whole_area(self):
         polygon = Polygon([(0, 11), (11, 11), (11, 0), (0, 0)])

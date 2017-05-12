@@ -1,6 +1,5 @@
 import unittest
 import numpy as np
-import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
@@ -31,11 +30,6 @@ class MultibandSchemaTest(BaseTestClass):
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_encoded_multibands(self):
         encoded = self.rdd.map(lambda s: AvroRegistry.tile_encoder(s))

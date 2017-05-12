@@ -1,5 +1,4 @@
 import unittest
-import pytest
 import numpy as np
 
 from geopyspark.geotrellis.constants import SPATIAL
@@ -21,11 +20,6 @@ class LocalOpertaionsTest(BaseTestClass):
                     'tileLayout': {'tileCols': 4, 'tileRows': 4, 'layoutCols': 1, 'layoutRows': 1}}}
 
     spatial_key = {'col': 0, 'row': 0}
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_add_int(self):
         arr = np.zeros((1, 4, 4))

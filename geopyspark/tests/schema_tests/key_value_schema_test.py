@@ -1,6 +1,5 @@
 import os
 import unittest
-import pytest
 import numpy as np
 
 from pyspark import RDD
@@ -49,13 +48,6 @@ class KeyValueRecordSchemaTest(unittest.TestCase):
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
-
-    @pytest.mark.skipif('TRAVIS' in os.environ,
-                        reason="Encoding using methods in Main cuases issues on Travis")
     def test_encoded_kvs(self):
         encoded = self.rdd.map(lambda s: encoder(s))
         actual_kvs = encoded.collect()

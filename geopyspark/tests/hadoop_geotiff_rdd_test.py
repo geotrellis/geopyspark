@@ -1,7 +1,6 @@
 import unittest
 from os import walk, path
 import rasterio
-import pytest
 
 from geopyspark.geotrellis.constants import SPATIAL
 from geopyspark.tests.python_test_utils import geotiff_test_path
@@ -42,11 +41,6 @@ class GeoTiffIOTest(object):
 
 class Singleband(GeoTiffIOTest, BaseTestClass):
     dir_path = geotiff_test_path("one-month-tiles/")
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:

@@ -1,6 +1,5 @@
 import unittest
 import os
-import pytest
 
 from shapely.geometry import box
 
@@ -22,11 +21,6 @@ class CatalogTest(BaseTestClass):
     dir_path = geotiff_test_path("catalog/")
     uri = "file://{}".format(dir_path)
     layer_name = "catalog-test"
-
-    @pytest.fixture(scope='class', autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_read(self):
         for x in range(11, 0, -1):

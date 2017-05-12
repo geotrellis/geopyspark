@@ -1,5 +1,4 @@
 import unittest
-import pytest
 
 from pyspark import RDD
 from pyspark.serializers import AutoBatchedSerializer
@@ -19,11 +18,6 @@ class SpatialKeySchemaTest(BaseTestClass):
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.first()
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def result_checker(self, actual_keys, expected_keys):
         self.assertDictEqual(actual_keys, expected_keys)
@@ -54,11 +48,6 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
 
     rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def result_checker(self, actual_keys, expected_keys):
         for actual, expected in zip(actual_keys, expected_keys):

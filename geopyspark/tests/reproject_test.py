@@ -1,6 +1,5 @@
 import os
 import unittest
-import pytest
 
 from geopyspark.geotrellis.constants import ZOOM
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -14,11 +13,6 @@ class ReprojectTest(BaseTestClass):
     expected_crs = "+proj=longlat +ellps=WGS72 +towgs84=0,0,1.9,0,0,0.814,-0.38 +no_defs "
 
     laid_out_rdd = BaseTestClass.rdd.tile_to_layout(metadata)
-
-    @pytest.fixture(autouse=True)
-    def tearDown(self):
-        yield
-        BaseTestClass.geopysc.pysc._gateway.close()
 
     def test_same_crs_layout(self):
         result = self.laid_out_rdd.reproject("EPSG:4326", extent = self.extent, layout=self.layout)
