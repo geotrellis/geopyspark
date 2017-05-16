@@ -70,3 +70,4 @@ traitlets==4.3.1
 virtualenv==13.1.2
 wcwidth==0.1.7
 widgetsnbextension==2.0.0
+gevent==1.2.1

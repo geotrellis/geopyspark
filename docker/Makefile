@@ -61,6 +61,21 @@ $(PYTHON-BLOB): $(WHL) scripts/gather-libs.sh archives/gdal-and-friends.tar.gz
 stage1: Dockerfile.stage1 $(JAR) blobs/geonotebook.tar blobs/geotrellis-backend-assembly-0.1.0.jar blobs/gdal-and-friends.tar.gz blobs/geopyspark-and-friends.tar.gz
 	docker build -t $(STAGE1) -f Dockerfile.stage1 .
 
+run:
+	docker run -it \
+	  --rm \
+	  -p 8000:8000 \
+	  -p 8033:8033 \
+          -p 4040:4040 \
+          -p 4041:4041 \
+          -p 4042:4042 \
+          -p 4043:4043 \
+          -p 4044:4044 \
+	  -v /tmp/L57.Globe.month09.2010.hh09vv04.h6v1.doy247to273.NBAR.v3.0.tiff:/tmp/L57.Globe.month09.2010.hh09vv04.h6v1.doy247to273.NBAR.v3.0.tiff \
+	  -v $(shell pwd)/notebooks:/home/hadoop/notebooks:rw \
+	  -v $(HOME)/.aws:/home/hadoop/.aws:ro \
+	  $(STAGE1)
+
 clean:
 	rm -f $(WHL) $(JAR)
 

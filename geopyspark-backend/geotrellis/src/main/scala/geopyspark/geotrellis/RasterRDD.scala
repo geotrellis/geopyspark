@@ -9,6 +9,7 @@ import geotrellis.vector.io.wkt.WKT
 import geotrellis.raster._
 import geotrellis.raster.resample._
 import geotrellis.raster.render._
+import geotrellis.raster.histogram.Histogram
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.json._
@@ -132,6 +133,26 @@ abstract class TileRDD[K: ClassTag] {
         (math.min(acc._1, elem._1), math.max(acc._2, elem._2))
     }
   }
+
+  /** Compute the quantile breaks per band.
+    * TODO: This just works for single bands right now.
+    *       make it work with multiband.
+    */
+  def quantileBreaks(n: Int): Array[Double] =
+    rdd
+      .histogram
+      .head
+      .quantileBreaks(n)
+
+  /** Compute the quantile breaks per band.
+    * TODO: This just works for single bands right now.
+    *       make it work with multiband.
+    */
+  def quantileBreaksExactInt(n: Int): Array[Int] =
+    rdd
+      .mapValues(_.band(0))
+      .histogramExactInt
+      .quantileBreaks(n)
 
   protected def reclassify(reclassifiedRDD: RDD[(K, MultibandTile)]): TileRDD[_]
   protected def reclassifyDouble(reclassifiedRDD: RDD[(K, MultibandTile)]): TileRDD[_]

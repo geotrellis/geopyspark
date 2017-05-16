@@ -38,6 +38,9 @@ docker/archives/${WHEELNAME}: ${WHEEL}
 docker-build: docker/archives/${ASSEMBLYNAME} docker/archives/${WHEELNAME}
 	(cd docker && make)
 
+docker-run:
+	(cd docker && make run)
+
 clean:
 	rm -f ${WHEEL} ${DIST-ASSEMBLY}
 	(cd geopyspark-backend && ./sbt "project geotrellis-backend" clean)

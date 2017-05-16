@@ -26,5 +26,5 @@ RUN (pushd /tmp ; tar axvf geonotebook.tar ; popd) && \
 COPY config/geonotebook.ini /home/hadoop/.local/etc/geonotebook.ini
 COPY kernels/geonotebook-local/kernel.json /home/hadoop/.local/share/jupyter/kernels/geonotebook3/kernel.json
 
-# Copy notebook
-COPY notebooks/Zork.ipynb /home/hadoop
+WORKDIR /tmp
+CMD ["jupyterhub", "--no-ssl", "--Spawner.notebook_dir=/home/hadoop/notebooks"]

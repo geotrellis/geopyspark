@@ -548,6 +548,9 @@ class TiledRasterRDD(RDDWrapper):
 
         return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
 
+    def repartition(self, num_partitions):
+        return TiledRasterRDD(self.geopysc, self.rdd_type, self.srdd.repartition(num_partitions))
+
     def lookup(self, col, row):
         """Return the value(s) in the image of a particular SpatialKey (given by col and row)
 
@@ -777,6 +780,30 @@ class TiledRasterRDD(RDDWrapper):
         min_max = self.srdd.getMinMax()
         return (min_max._1(), min_max._2())
 
+    def get_quantile_breaks(self, num_breaks):
+        """Returns quantile breaks for this RDD.
+
+        Args:
+            num_breaks (int): The number of breaks to return.
+
+        Returns:
+            [float]
+        """
+        return list(self.srdd.quantileBreaks(num_breaks))
+
+    def get_quantile_breaks_exact_int(self, num_breaks):
+        """Returns quantile breaks for this RDD.
+        This version uses the FastMapHistogram, which counts exact integer values.
+        If your RDD has too many values, this can cause memory errors.
+
+        Args:
+            num_breaks (int): The number of breaks to return.
+
+        Returns:
+            [int]
+        """
+        return list(self.srdd.quantileBreaksExactInt(num_breaks))
+
     def _process_operation(self, value, operation):
         if isinstance(value, int) or isinstance(value, float):
             srdd = operation(value)
@@ -789,6 +816,8 @@ class TiledRasterRDD(RDDWrapper):
                 raise ValueError("Both TiledRasterRDDs need to have the same layout")
 
             srdd = operation(value.srdd)
+        elif isinstance(value, list):
+            srdd = operation(list(map(lambda x: x.srdd, value)))
         else:
             raise TypeError("Local operation cannot be performed with", value)
 

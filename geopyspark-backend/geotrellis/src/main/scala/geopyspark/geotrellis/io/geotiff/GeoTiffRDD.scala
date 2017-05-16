@@ -90,11 +90,11 @@ object GeoTiffRDD {
     val uris = paths.map{ path => new URI(path) }
 
     uris
-      .map { uri => 
+      .map { uri =>
         uri.getScheme match {
           case S3 =>
             if (options isEmpty)
-              getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.default)              
+              getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.default)
             else
               getS3GeoTiffRDD(sc, keyType, uri, S3GeoTiffRDDOptions.setValues(options))
           case _ =>
@@ -104,7 +104,7 @@ object GeoTiffRDD {
               getHadoopGeoTiffRDD(sc, keyType, new Path(uri), HadoopGeoTiffRDDOptions.setValues(options))
         }
       }
-      .reduce{ (r1, r2) => 
+      .reduce{ (r1, r2) =>
         keyType match {
           case PROJECTEDEXTENT =>
             ProjectedRasterRDD(r1.asInstanceOf[ProjectedRasterRDD].rdd.union(r2.asInstanceOf[ProjectedRasterRDD].rdd))

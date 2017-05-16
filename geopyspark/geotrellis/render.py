@@ -1,17 +1,33 @@
 from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM
 
+class ColorRamp(object):
+    @classmethod
+    def get(cls, geopysc, name, num_colors=None):
+        if num_colors:
+            return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(name, num_colors))
+        else:
+            return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.get(name))
+
+    @classmethod
+    def getHex(cls, geopysc, name, num_colors=None):
+        if num_colors:
+            return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(name, num_colors))
+        else:
+            return list(geopysc._jvm.geopyspark.geotrellis.ColorRamp.getHex(name))
+
+
 class PngRDD(object):
     def __init__(self, pyramid, ramp_name, debug=False):
         """Convert a pyramid of TiledRasterRDDs into a displayable structure of PNGs
 
         Args:
-            pyramid (list): A pyramid of TiledRasterRDD resulting from calling the pyramid 
+            pyramid (list): A pyramid of TiledRasterRDD resulting from calling the pyramid
                 method on an instance of that class
-            ramp_name (str): The name of a color ramp; options are hot, coolwarm, magma, 
-                inferno, plasma, viridis, BlueToOrange, LightYellowToOrange, BlueToRed, 
-                GreenToRedOrange, LightToDarkSunset, LightToDarkGreen, HeatmapYellowToRed, 
-                HeatmapBlueToYellowToRedSpectrum, HeatmapDarkRedToYellowWhite, 
-                HeatmapLightPurpleToDarkPurpleToWhite, ClassificationBoldLandUse, and 
+            ramp_name (str): The name of a color ramp; options are hot, coolwarm, magma,
+                inferno, plasma, viridis, BlueToOrange, LightYellowToOrange, BlueToRed,
+                GreenToRedOrange, LightToDarkSunset, LightToDarkGreen, HeatmapYellowToRed,
+                HeatmapBlueToYellowToRedSpectrum, HeatmapDarkRedToYellowWhite,
+                HeatmapLightPurpleToDarkPurpleToWhite, ClassificationBoldLandUse, and
                 ClassificationMutedTerrain
 
         Returns: A PngRDD object
@@ -30,15 +46,15 @@ class PngRDD(object):
 
         Args:
             tiledrdd (TiledRasterRDD): The TiledRasterRDD source
-            ramp_name (str): The name of a color ramp; options are hot, coolwarm, magma, 
-                inferno, plasma, viridis, BlueToOrange, LightYellowToOrange, BlueToRed, 
-                GreenToRedOrange, LightToDarkSunset, LightToDarkGreen, HeatmapYellowToRed, 
-                HeatmapBlueToYellowToRedSpectrum, HeatmapDarkRedToYellowWhite, 
-                HeatmapLightPurpleToDarkPurpleToWhite, ClassificationBoldLandUse, and 
+            ramp_name (str): The name of a color ramp; options are hot, coolwarm, magma,
+                inferno, plasma, viridis, BlueToOrange, LightYellowToOrange, BlueToRed,
+                GreenToRedOrange, LightToDarkSunset, LightToDarkGreen, HeatmapYellowToRed,
+                HeatmapBlueToYellowToRedSpectrum, HeatmapDarkRedToYellowWhite,
+                HeatmapLightPurpleToDarkPurpleToWhite, ClassificationBoldLandUse, and
                 ClassificationMutedTerrain
-            start_zoom (int, optional): The starting (highest resolution) zoom level for 
+            start_zoom (int, optional): The starting (highest resolution) zoom level for
                 the pyramid.  Defaults to the zoom level of the source RDD.
-            end_zoom (int, optional): The final (lowest resolution) zoom level for the 
+            end_zoom (int, optional): The final (lowest resolution) zoom level for the
                 pyramid.  Defaults to 0.
             resample_method (str, optional): The resample method to use for the reprojection.
                 This is represented by a constant. If none is specified, then NEARESTNEIGHBOR
@@ -46,18 +62,12 @@ class PngRDD(object):
 
         Returns: A PngRDD object
         """
-        if resample_method not in RESAMPLE_METHODS:
-            raise ValueError(resample_method, " Is not a known resample method.")
-
-        reprojected = tiledrdd.reproject("EPSG:3857", scheme=ZOOM)
-
         if not start_zoom:
-            if reprojected.zoom_level:
-                start_zoom = reprojected.zoom_level
-            else:
+            start_zoom = tiledrdd.zoom_level
+            if not start_zoom:
                 raise AttributeError("No initial zoom level is available; Please provide a value for start_zoom")
 
-        pyramid = reprojected.pyramid(start_zoom, end_zoom, resample_method)
+        pyramid = tiledrdd.pyramid(start_zoom, end_zoom, resample_method)
 
         return cls(pyramid, ramp_name, debug)
 

@@ -12,6 +12,7 @@ import geotrellis.spark.costdistance.IterativeCostDistance
 import geotrellis.spark.io._
 import geotrellis.spark.io.avro._
 import geotrellis.spark.io.json._
+import geotrellis.spark.mapalgebra.local._
 import geotrellis.spark.mapalgebra.focal._
 import geotrellis.spark.mask.Mask
 import geotrellis.spark.pyramid._
@@ -23,12 +24,14 @@ import geotrellis.vector.io.wkt.WKT
 
 import spray.json._
 import spray.json.DefaultJsonProtocol._
+import spire.syntax.cfor._
 
 import org.apache.spark._
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd._
 import org.apache.spark.SparkContext._
 
+import java.util.ArrayList
 import scala.reflect._
 import scala.collection.JavaConverters._
 
@@ -41,6 +44,9 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
   def rdd: RDD[(K, MultibandTile)] with Metadata[TileLayerMetadata[K]]
   def zoomLevel: Option[Int]
 
+  def repartition(numPartitions: Int): TiledRasterRDD[K] =
+    withRDD(rdd.repartition(numPartitions))
+
   def getZoom: Integer =
     zoomLevel match {
       case None => null
@@ -52,7 +58,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
 
   def layerMetadata: String = rdd.metadata.toJson.prettyPrint
 
-  def mask(wkts: java.util.ArrayList[String]): TiledRasterRDD[_] = {
+  def mask(wkts: java.util.ArrayList[String]): TiledRasterRDD[K] = {
     val geometries: Seq[MultiPolygon] = wkts
       .asScala.map({ wkt => WKT.read(wkt) })
       .flatMap({
@@ -63,14 +69,14 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     mask(geometries)
   }
 
-  protected def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[_]
+  protected def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[K]
 
   def reproject(
     extent: java.util.Map[String, Double],
     layout: java.util.Map[String, Int],
     crs: String,
     resampleMethod: String
-  ): TiledRasterRDD[_] = {
+  ): TiledRasterRDD[K] = {
     val layoutDefinition = Right(LayoutDefinition(extent.toExtent, layout.toTileLayout))
 
     reproject(layoutDefinition, TileRDD.getCRS(crs).get, getReprojectOptions(resampleMethod))
@@ -82,7 +88,7 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     resolutionThreshold: Double,
     crs: String,
     resampleMethod: String
-  ): TiledRasterRDD[_] = {
+  ): TiledRasterRDD[K] = {
     val _crs = TileRDD.getCRS(crs).get
 
     val layoutScheme =
@@ -98,18 +104,18 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     layout: Either[LayoutScheme, LayoutDefinition],
     crs: CRS,
     options: Reproject.Options
-  ): TiledRasterRDD[_]
+  ): TiledRasterRDD[K]
 
   def tileToLayout(
     layoutDefinition: LayoutDefinition,
     resampleMethod: String
-  ): TiledRasterRDD[_]
+  ): TiledRasterRDD[K]
 
   def pyramid(
     startZoom: Int,
     endZoom: Int,
     resampleMethod: String
-  ): Array[_] // Array[TiledRasterRDD[_]]
+  ): Array[_] // Array[TiledRasterRDD[K]]
 
   def focal(
     operation: String,
@@ -117,13 +123,13 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     param1: Double,
     param2: Double,
     param3: Double
-  ): TiledRasterRDD[_]
+  ): TiledRasterRDD[K]
 
   def costDistance(
     sc: SparkContext,
     wkts: java.util.ArrayList[String],
     maxDistance: Double
-  ): TiledRasterRDD[_] = {
+  ): TiledRasterRDD[K] = {
     val geometries = wkts.asScala.map({ wkt => WKT.read(wkt) })
 
     costDistance(sc, geometries, maxDistance)
@@ -133,36 +139,46 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
     sc: SparkContext,
     geometries: Seq[Geometry],
     maxDistance: Double
-  ): TiledRasterRDD[_]
+  ): TiledRasterRDD[K]
 
-  def localAdd(i: Int): TiledRasterRDD[_] =
+  def localAdd(i: Int): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y + i })) })
 
-  def localAdd(d: Double): TiledRasterRDD[_] =
+  def localAdd(d: Double): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y + d })) })
 
-  def localAdd(other: TiledRasterRDD[K]): TiledRasterRDD[_] =
+  def localAdd(other: TiledRasterRDD[K]): TiledRasterRDD[K] =
     withRDD(rdd.combineValues(other.rdd) {
         case (x: MultibandTile, y: MultibandTile) => {
           val tiles: Vector[Tile] =
-            x.bands.zip(y.bands).map(tup => tup._1 + tup._2)
+            x.bands.zip(y.bands).map { case (b1, b2) => b1 + b2 }
           MultibandTile(tiles)
         }
-      })
+    })
 
-  def localSubtract(i: Int): TiledRasterRDD[_] =
+  def localAdd(others: ArrayList[TiledRasterRDD[K]]): TiledRasterRDD[K] =
+    withRDD(rdd.combineValues(others.asScala.map(_.rdd)) { ts =>
+      val bandCount = ts.head.bandCount
+      val newBands = Array.ofDim[Tile](bandCount)
+      cfor(0)(_ < bandCount, _ + 1) { b =>
+        newBands(b) = ts.map(_.band(b)).localAdd
+      }
+      MultibandTile(newBands)
+    })
+
+  def localSubtract(i: Int): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y - i })) })
 
-  def reverseLocalSubtract(i: Int): TiledRasterRDD[_] =
+  def reverseLocalSubtract(i: Int): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y.-:(i) })) })
 
-  def localSubtract(d: Double): TiledRasterRDD[_] =
+  def localSubtract(d: Double): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y - d })) })
 
-  def reverseLocalSubtract(d: Double): TiledRasterRDD[_] =
+  def reverseLocalSubtract(d: Double): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y.-:(d) })) })
 
-  def localSubtract(other: TiledRasterRDD[K]): TiledRasterRDD[_] =
+  def localSubtract(other: TiledRasterRDD[K]): TiledRasterRDD[K] =
     withRDD(rdd.combineValues(other.rdd) {
         case (x: MultibandTile, y: MultibandTile) => {
           val tiles: Vector[Tile] =
@@ -171,13 +187,13 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
         }
       })
 
-  def localMultiply(i: Int): TiledRasterRDD[_] =
+  def localMultiply(i: Int): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y * i })) })
 
-  def localMultiply(d: Double): TiledRasterRDD[_] =
+  def localMultiply(d: Double): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y * d })) })
 
-  def localMultiply(other: TiledRasterRDD[K]): TiledRasterRDD[_] =
+  def localMultiply(other: TiledRasterRDD[K]): TiledRasterRDD[K] =
     withRDD(rdd.combineValues(other.rdd) {
         case (x: MultibandTile, y: MultibandTile) => {
           val tiles: Vector[Tile] =
@@ -186,19 +202,19 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
         }
       })
 
-  def localDivide(i: Int): TiledRasterRDD[_] =
+  def localDivide(i: Int): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y / i })) })
 
-  def localDivide(d: Double): TiledRasterRDD[_] =
+  def localDivide(d: Double): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y / d })) })
 
-  def reverseLocalDivide(i: Int): TiledRasterRDD[_] =
+  def reverseLocalDivide(i: Int): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y./:(i) })) })
 
-  def reverseLocalDivide(d: Double): TiledRasterRDD[_] =
+  def reverseLocalDivide(d: Double): TiledRasterRDD[K] =
     withRDD(rdd.map { x => (x._1, MultibandTile(x._2.bands.map { y => y./:(d) })) })
 
-  def localDivide(other: TiledRasterRDD[K]): TiledRasterRDD[_] =
+  def localDivide(other: TiledRasterRDD[K]): TiledRasterRDD[K] =
     withRDD(rdd.combineValues(other.rdd) {
         case (x: MultibandTile, y: MultibandTile) => {
           val tiles: Vector[Tile] =
@@ -207,10 +223,10 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
         }
       })
 
-  def convertDataType(newType: String): TiledRasterRDD[_] =
+  def convertDataType(newType: String): TiledRasterRDD[K] =
     withRDD(rdd.convert(CellType.fromName(newType)))
 
-  protected def withRDD(result: RDD[(K, MultibandTile)]): TiledRasterRDD[_]
+  protected def withRDD(result: RDD[(K, MultibandTile)]): TiledRasterRDD[K]
 }
 
 
@@ -306,7 +322,7 @@ class SpatialTiledRasterRDD(
     SpatialTiledRasterRDD(None, multibandRDD)
   }
 
-  def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[_] = {
+  def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[SpatialKey] = {
     val options = Mask.Options.DEFAULT
     val singleBand = ContextRDD(
       rdd.map({ case (k, v) => (k, v.band(0)) }),
@@ -375,7 +391,7 @@ class TemporalTiledRasterRDD(
   val rdd: RDD[(SpaceTimeKey, MultibandTile)] with Metadata[TileLayerMetadata[SpaceTimeKey]]
 ) extends TiledRasterRDD[SpaceTimeKey] {
 
-  def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[_] = {
+  def mask(geometries: Seq[MultiPolygon]): TiledRasterRDD[SpaceTimeKey] = {
     val options = Mask.Options.DEFAULT
     val singleBand = ContextRDD(
       rdd.map({ case (k, v) => (k, v.band(0)) }),
