@@ -6,7 +6,7 @@ What is GeoPySpark?
 this project is released under the Apache 2 License.
 
 GeoPySpark seeks to utilize GeoTrellis to allow for the reading, writing, and
-operating on raster data. Thus, its able to scale to the data and still be able
+operating on raster data. Thus, it's able to scale to the data and still be able
 to perform well.
 
 In addition to raster processing, GeoPySpark allows for rasters to be rendered
