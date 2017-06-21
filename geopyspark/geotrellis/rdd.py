@@ -413,7 +413,6 @@ class RasterRDD(CachableRDD):
         min_max = self.srdd.getMinMax()
         return (min_max._1(), min_max._2())
 
-
 class TiledRasterRDD(CachableRDD):
     """Wraps a RDD of tiled, GeoTrellis rasters.
 
@@ -843,6 +842,36 @@ class TiledRasterRDD(CachableRDD):
         ser = self.geopysc.create_value_serializer(tup._2(), TILE)
         return ser.loads(tup._1())[0]
 
+    def save_stitched(self, path, crop_bounds=None, crop_dimensions=None):
+        """Stitch all of the rasters within the RDD into one raster.
+
+        Args:
+            path: The path of the geotiff to save.
+            crop_bounds: Optional bounds with which to crop the raster before saving.
+            crop_dimensions: Optional cols and rows of the image to save
+
+        Note:
+            This can only be used on `SPATIAL` TiledRasterRDDs.
+
+        Returns:
+            None
+        """
+
+        if self.rdd_type != SPATIAL:
+            raise ValueError("Only TiledRasterRDDs with a rdd_type of Spatial can use stitch()")
+
+        if crop_bounds:
+            if crop_dimensions:
+                self.srdd.save_stitched(path, list(crop_bounds), list(crop_dimensions))
+            else:
+                self.srdd.save_stitched(path, list(crop_bounds))
+        elif crop_dimensions:
+            raise Exception("crop_dimensions requires crop_bounds")
+        else:
+            self.srdd.save_stitched(path)
+
+        return None
+
     def mask(self, geometries):
         """Masks the ``TiledRasterRDD`` so that only values that intersect the geometries will
         be available.
@@ -950,6 +979,21 @@ class TiledRasterRDD(CachableRDD):
         min_max = self.srdd.getMinMax()
         return (min_max._1(), min_max._2())
 
+    def normalize(self, old_min, old_max, new_min, new_max):
+        """Finds the min value that is contained within the given geometry.
+
+        Args:
+            old_min (float): Old minimum.
+            old_max (float): Old maximum.
+            new_min (float): New minimum to normalize to.
+            new_max (float): New maximum to normalize to.
+        Returns:
+            :class:`~geopyspark.geotrellis.rdd.TiledRasterRDD`
+        """
+        srdd = self.srdd.normalize(old_min, old_max, new_min, new_max)
+
+        return TiledRasterRDD(self.geopysc, self.rdd_type, srdd)
+
     @staticmethod
     def _process_polygonal_summary(geometry, operation):
         if isinstance(geometry, Polygon) or isinstance(geometry, MultiPolygon):
@@ -1044,7 +1088,6 @@ class TiledRasterRDD(CachableRDD):
         """
 
         return self._process_polygonal_summary(geometry, self.srdd.polygonalMean)
-
     def get_quantile_breaks(self, num_breaks):
         """Returns quantile breaks for this RDD.
 
@@ -1072,7 +1115,7 @@ class TiledRasterRDD(CachableRDD):
     def is_floating_point_layer(self):
         """Determines whether the content of the TiledRasterRDD is of floating point type.
 
-        Args: 
+        Args:
             None
 
         Returns:

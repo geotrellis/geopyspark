@@ -4,6 +4,7 @@ import geopyspark.geotrellis.GeoTrellisUtils._
 
 import geotrellis.proj4._
 import geotrellis.raster._
+import geotrellis.raster.io.geotiff._
 import geotrellis.raster.distance._
 import geotrellis.raster.histogram._
 import geotrellis.raster.rasterize._
@@ -236,8 +237,19 @@ abstract class TiledRasterRDD[K: SpatialComponent: AvroRecordCodec: JsonFormat: 
         }
       })
 
-  def convertDataType(newType: String): TiledRasterRDD[_] =
+  def convertDataType(newType: String): TiledRasterRDD[K] =
     withRDD(rdd.convert(CellType.fromName(newType)))
+
+  def normalize(oldMin: Double, oldMax: Double, newMin: Double, newMax: Double): TiledRasterRDD[K] =
+    withRDD {
+      rdd.mapValues { tile =>
+        MultibandTile {
+          tile.bands.map { band =>
+            band.normalize(oldMin, oldMax, newMin, newMax)
+          }
+        }
+      }
+    }
 
   def singleTileLayerRDD: TileLayerRDD[K] = TileLayerRDD(
     rdd.mapValues({ v => v.band(0) }),
@@ -410,6 +422,52 @@ class SpatialTiledRasterRDD(
     )
 
     PythonTranslator.toPython(contextRDD.stitch.tile)
+  }
+
+  def save_stitched(path: String): Unit =
+    _save_stitched(path, None, None)
+
+  def save_stitched(path: String, cropBounds: ArrayList[Double]): Unit =
+    _save_stitched(path, Some(cropBounds), None)
+
+  def save_stitched(path: String, cropBounds: ArrayList[Double], cropDimensions: ArrayList[Int]): Unit =
+    _save_stitched(path, Some(cropBounds), Some(cropDimensions))
+
+  private def _save_stitched(path: String, cropBounds: Option[ArrayList[Double]], cropDimensions: Option[ArrayList[Int]]): Unit = {
+
+    val contextRDD = ContextRDD(
+      rdd.map({ case (k, v) => (k, v.band(0)) }),
+      rdd.metadata
+    )
+    val stitched: Raster[Tile] = contextRDD.stitch()
+
+    val adjusted = {
+      val cropExtent =
+        cropBounds.map { b =>
+          val bounds = b.asScala.toArray
+          Extent(bounds(0), bounds(1), bounds(2), bounds(3))
+        }
+
+      val cropped =
+        cropExtent match {
+          case Some(extent) =>
+            stitched.crop(extent)
+          case None =>
+            stitched
+        }
+
+      val resampled =
+        cropDimensions.map(_.asScala.toArray) match {
+          case Some(dimensions) =>
+            cropped.resample(dimensions(0), dimensions(1))
+          case None =>
+            cropped
+        }
+
+      resampled
+    }
+
+    GeoTiff(adjusted, contextRDD.metadata.crs).write(path)
   }
 
   def costDistance(

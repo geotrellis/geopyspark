@@ -109,18 +109,12 @@ class PngRDD(CachableRDD):
 
         Returns: A PngRDD object
         """
-        if resample_method not in RESAMPLE_METHODS:
-            raise ValueError(resample_method, " Is not a known resample method.")
-
-        reprojected = tiledrdd.reproject("EPSG:3857", scheme=ZOOM)
-
         if not start_zoom:
-            if reprojected.zoom_level:
-                start_zoom = reprojected.zoom_level
-            else:
+            start_zoom = tiledrdd.zoom_level
+            if not start_zoom:
                 raise AttributeError("No initial zoom level is available; Please provide a value for start_zoom")
 
-        pyramid = reprojected.pyramid(start_zoom, end_zoom, resample_method)
+        pyramid = tiledrdd.pyramid(start_zoom, end_zoom, resample_method)
 
         return cls(pyramid, ramp_name, debug)
 

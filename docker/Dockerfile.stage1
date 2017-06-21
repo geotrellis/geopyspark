@@ -27,5 +27,8 @@ RUN mkdir /home/hadoop/notebooks && \
 COPY config/geonotebook.ini /home/hadoop/.local/etc/geonotebook.ini
 COPY kernels/geonotebook-local/kernel.json /home/hadoop/.local/share/jupyter/kernels/geonotebook3/kernel.json
 
+RUN pip3 install --user awscli
+RUN pip3 install --user boto3
+
 WORKDIR /tmp
 CMD ["jupyterhub", "--no-ssl", "--Spawner.notebook_dir=/home/hadoop/notebooks"]

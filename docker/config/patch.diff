@@ -21,11 +21,13 @@ index bfa5658..4beb0e2 100644
      pip2.7 install . && \
      jupyter serverextension enable --py geonotebook --sys-prefix && \
 diff --git a/config/geonotebook.ini b/config/geonotebook.ini
-index 6ff4b8d..c88173f 100644
+index 6ff4b8d..c03959b 100644
 --- a/config/geonotebook.ini
 +++ b/config/geonotebook.ini
-@@ -2,6 +2,9 @@
- vis_server = ktile
+@@ -1,7 +1,10 @@
+ [default]
+-vis_server = ktile
++vis_server = geotrellis
  log_level = WARNING
  
 +[geotrellis]
@@ -62,7 +64,7 @@ index d2c2b9e..e659a43 100644
 +    print(ep.load())
      Config.register_vis_server(ep.name, ep.load())
 diff --git a/geonotebook/kernel.py b/geonotebook/kernel.py
-index 1e742d5..f6786b6 100644
+index 1e742d5..c748198 100644
 --- a/geonotebook/kernel.py
 +++ b/geonotebook/kernel.py
 @@ -1,5 +1,6 @@
@@ -91,6 +93,15 @@ index 1e742d5..f6786b6 100644
  
  
  class Remote(object):
+@@ -177,7 +184,7 @@ class Remote(object):
+ 
+ 
+ class Geonotebook(object):
+-    msg_types = ['get_protocol', 'set_center', 'add_annotation_from_client',
++    msg_types = ['get_protocol', 'set_center', 'set_zoom_range', 'add_annotation_from_client',
+                  'get_map_state']
+ 
+     _protocol = None
 @@ -308,9 +315,12 @@ class Geonotebook(object):
          self.y = None
          self.z = None
@@ -104,13 +115,35 @@ index 1e742d5..f6786b6 100644
      @property
      def kernel_id(self):
          return get_kernel_id(self._kernel)
-@@ -392,7 +402,27 @@ class Geonotebook(object):
+@@ -360,6 +370,21 @@ class Geonotebook(object):
+         return self._remote.set_center(x, y, z)\
+             .then(_set_center, self.rpc_error).catch(self.callback_error)
+ 
++    def set_zoom_range(self, min, max):
++        """Set the center of the map.
++
++        :param zoom:
++        :returns:
++        :rtype:
++
++        """
++        def _set_zoom_range(result):
++            self.min_zoom = result[0]
++            self.max_zoom = result[1]
++
++        return self._remote.set_zoom_range(min, max)\
++            .then(_set_zoom_range, self.rpc_error).catch(self.callback_error)
++
+     def get_map_state(self):
+         """Get the state of the map.
+ 
+@@ -392,7 +417,27 @@ class Geonotebook(object):
              kwargs['zIndex'] = len(self.layers)
  
          # HACK:  figure out a way to do this without so many conditionals
 -        if isinstance(data, RasterData):
 +        if isinstance(data, RddRasterData):
-+            name = data.name
++            name = data.name if name is None else name
 +
 +            layer = InProcessTileLayer(name,
 +                                       self._remote,
@@ -120,7 +153,7 @@ index 1e742d5..f6786b6 100644
 +                                       **kwargs)
 +
 +        elif isinstance(data, GeoTrellisCatalogLayerData):
-+            name = "%s__%s" % (hash(data.catalog_uri), data.layer_name)
++            name = data.name if name is None else name
 +
 +            layer = InProcessTileLayer(name,
 +                                       self._remote,
@@ -133,7 +166,7 @@ index 1e742d5..f6786b6 100644
              # TODO verify layer exists in geoserver?
              name = data.name if name is None else name
  
-@@ -406,7 +436,7 @@ class Geonotebook(object):
+@@ -406,7 +451,7 @@ class Geonotebook(object):
              layer = TimeSeriesLayer(
                  name, self._remote, data=data, vis_url=vis_url, **kwargs
              )
@@ -142,7 +175,7 @@ index 1e742d5..f6786b6 100644
              layer = VectorLayer(
                  name, self._remote, self.layers, data=data, **kwargs
              )
-@@ -438,7 +468,10 @@ class Geonotebook(object):
+@@ -438,7 +483,10 @@ class Geonotebook(object):
          if hasattr(layer_name, 'name'):
              layer_name = layer_name.name
  
@@ -155,7 +188,7 @@ index 1e742d5..f6786b6 100644
  
          cb = self._remote.remove_layer(layer_name).then(
 diff --git a/geonotebook/layers.py b/geonotebook/layers.py
-index 0e73741..316a58c 100644
+index 0e73741..24e3173 100644
 --- a/geonotebook/layers.py
 +++ b/geonotebook/layers.py
 @@ -23,7 +23,7 @@ class GeonotebookLayer(object):
@@ -167,7 +200,15 @@ index 0e73741..316a58c 100644
      _expose_as = None
  
      # A class that serializes the layer's appearance.  Defaults
-@@ -209,7 +209,7 @@ class VectorLayer(GeonotebookLayer):
+@@ -42,6 +42,7 @@ class GeonotebookLayer(object):
+         self._expose_as = kwargs.pop("expose_as", None)
+ 
+         self.vis_options = self.StyleOptions(**kwargs)
++
+         self.can_subset = False
+ 
+     def __repr__(self):
+@@ -209,7 +210,7 @@ class VectorLayer(GeonotebookLayer):
          elif 'colormap' in kwargs:  # a matplotlib colormap
              kwargs['colors'] = discrete_colors(kwargs['colormap'], len(data))
  
@@ -176,7 +217,7 @@ index 0e73741..316a58c 100644
          data.layer = self
          super(VectorLayer, self).__init__(name, remote, data, **kwargs)
          self.data = data
-@@ -232,7 +232,8 @@ class SimpleLayer(DataLayer):
+@@ -232,7 +233,8 @@ class SimpleLayer(DataLayer):
  
          if vis_url is None:
              self.vis_url = self.config.vis_server.ingest(
@@ -186,12 +227,7 @@ index 0e73741..316a58c 100644
          else:
              self.vis_url = vis_url
  
-@@ -245,11 +246,40 @@ class SimpleLayer(DataLayer):
-     def query_params(self):
-         return self.config.vis_server.get_params(
-             self.name, self.data, **self.vis_options.serialize())
--
-     def __repr__(self):
+@@ -250,6 +252,37 @@ class SimpleLayer(DataLayer):
          return "<{}('{}')>".format(
              self.__class__.__name__, self.name.split("_")[0])
  
@@ -214,7 +250,8 @@ index 0e73741..316a58c 100644
 +
 +    @property
 +    def name(self):
-+        return self._name
++        return "{}_{}".format(
++            self._name, hash(self.vis_options) + sys.maxsize + 1)
 +
 +    @property
 +    def query_params(self):
@@ -250,10 +287,10 @@ index 0000000..3e3a150
 +__all__ = ('GeoTrellis')
 diff --git a/geonotebook/vis/geotrellis/geotrellis.py b/geonotebook/vis/geotrellis/geotrellis.py
 new file mode 100644
-index 0000000..3ff65ec
+index 0000000..c152069
 --- /dev/null
 +++ b/geonotebook/vis/geotrellis/geotrellis.py
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,180 @@
 +import requests
 +import threading
 +import multiprocessing
@@ -266,13 +303,12 @@ index 0000000..3ff65ec
 +from random import randint
 +from .server import (rdd_server,
 +                     catalog_layer_server,
-+                     catalog_multilayer_server,
 +                     png_layer_server)
 +
 +from .render_methods import render_default_rdd
 +
 +logger = logging.getLogger('geotrellis-tile-server')
-+# jupyterhub --no-ssl --Spawner.notebook_dir=/home/hadoop
++# jupyterhub --no-ssl --Spawner.notebook_dir=/home/hadoop/notebooks
 +
 +class GeoTrellisTileHandler(IPythonHandler):
 +
@@ -413,16 +449,21 @@ index 0000000..3ff65ec
 +
 +            args = (server_port,
 +                    data.value_reader,
-+                    data.layer_name,
++                    data.layer_names,
++                    data.is_multi_layer,
 +                    data.key_type,
 +                    data.tile_type,
 +                    data.avroregistry,
++                    data.max_zoom,
 +                    render_tile)
-+            if isinstance(data.layer_name, list):
-+                p = multiprocessing.Process(target=catalog_multilayer_server, args=args)
-+            else:
-+                p = multiprocessing.Process(target=catalog_layer_server, args=args)
++            # if isinstance(data.layer_name, list):
++            #     p = multiprocessing.Process(target=catalog_multilayer_server, args=args)
++            # else:
++            #     p = multiprocessing.Process(target=catalog_layer_server, args=args)
++            p = multiprocessing.Process(target=catalog_layer_server, args=args)
 +            p.start()
++            # t = threading.Thread(target=catalog_layer_server, args=args)
++            # t.start()
 +        else:
 +            raise Exception("GeoTrellis vis server cannot handle data of type %s" % (type(data)))
 +
@@ -432,10 +473,10 @@ index 0000000..3ff65ec
 +        return "%s/%d" % (base_url, server_port)
 diff --git a/geonotebook/vis/geotrellis/render_methods.py b/geonotebook/vis/geotrellis/render_methods.py
 new file mode 100644
-index 0000000..a719593
+index 0000000..7100d0d
 --- /dev/null
 +++ b/geonotebook/vis/geotrellis/render_methods.py
-@@ -0,0 +1,134 @@
+@@ -0,0 +1,133 @@
 +from PIL import Image
 +import numpy as np
 +
@@ -482,7 +523,6 @@ index 0000000..a719593
 +    m = {}
 +    for key in color_map:
 +        m[key] = hex_to_rgb(color_map[key])
-+
 +
 +    def r(v):
 +        if v in m:
@@ -572,13 +612,15 @@ index 0000000..a719593
 +        return Image.merge('RGBA', list(gray, gray, gray, alfa))
 diff --git a/geonotebook/vis/geotrellis/server.py b/geonotebook/vis/geotrellis/server.py
 new file mode 100644
-index 0000000..c21fa6a
+index 0000000..dc38e3c
 --- /dev/null
 +++ b/geonotebook/vis/geotrellis/server.py
-@@ -0,0 +1,165 @@
-+import io
+@@ -0,0 +1,188 @@
++import io, os
 +import logging
++import math
 +import numpy as np
++import os
 +import rasterio
 +import threading
 +import sys
@@ -618,7 +660,13 @@ index 0000000..c21fa6a
 +    that takes z, x, y as the tile route.
 +    '''
 +    app = Flask(__name__)
++    app.logger.disabled = True
++    logging.getLogger('werkzeug').disabled = True
 +    http_server = WSGIServer(('', port), app)
++
++    f = open(os.devnull, "w")
++    # sys.stdout = f
++    sys.stderr = f
 +
 +    def shutdown():
 +        time.sleep(0.5)
@@ -660,53 +708,68 @@ index 0000000..c21fa6a
 +
 +    return make_tile_server(port, tile)
 +
-+def catalog_layer_server(port, value_reader, layer_name, key_type, tile_type, avroregistry, render_tile):
++def catalog_layer_server(port,
++                         value_reader,
++                         layer_names,
++                         is_multi_layer,
++                         key_type,
++                         tile_type,
++                         avroregistry,
++                         max_zoom,
++                         render_tile):
 +    from geopyspark.avroserializer import AvroSerializer
 +
-+    def tile(z, x, y):
-+        tile = value_reader.readTile(key_type,
-+                                     layer_name,
-+                                     z,
-+                                     x,
-+                                     y,
-+                                     "")
-+        if not tile:
-+            abort(404)
-+
-+        decoder = avroregistry._get_decoder(tile_type)
-+        encoder = avroregistry._get_encoder(tile_type)
-+
-+        ser = AvroSerializer(tile._2(), decoder, encoder)
-+        arr = ser.loads(tile._1())[0]['data']
-+        image = render_tile(arr)
-+
-+        return respond_with_image(image)
-+
-+    return make_tile_server(port, tile)
-+
-+def catalog_multilayer_server(port, value_reader, layer_names, key_type, tile_type, avroregistry, render_tile):
-+    from geopyspark.avroserializer import AvroSerializer
++    decoder = avroregistry._get_decoder(tile_type)
++    encoder = avroregistry._get_encoder(tile_type)
 +
 +    def tile(z, x, y):
++        if z > max_zoom:
++            overzoom = True
++            dz = z - max_zoom
++            tz = max_zoom
++            tx = math.floor(x / math.pow(2, dz))
++            ty = math.floor(y / math.pow(2, dz))
++        else:
++            overzoom = False
++            tz = z
++            tx = x
++            ty = y
++
 +        tiles = []
-+        decoder = avroregistry._get_decoder(tile_type)
-+        encoder = avroregistry._get_encoder(tile_type)
-+
 +        for layer_name in layer_names:
 +            value = value_reader.readTile(key_type,
 +                                          layer_name,
-+                                          z,
-+                                          x,
-+                                          y,
++                                          tz,
++                                          tx,
++                                          ty,
 +                                          "")
 +            if not value:
 +                abort(404)
 +
 +            ser = AvroSerializer(value._2(), decoder, encoder)
 +            tile = ser.loads(value._1())[0]['data']
++
 +            tiles.append(tile)
 +
-+        image = render_tile(tiles)
++        if is_multi_layer:
++            image = render_tile(tiles)
++        else:
++            image = render_tile(tiles[0])
++
++        if overzoom:
++            # Figure out image crop bounds
++            dz = z - max_zoom
++            dx = x - tx * math.pow(2, dz)
++            dy = y - ty * math.pow(2, dz)
++
++            (w, h) = image.size
++
++            tw = int(w / dz)
++            th = int(h / dz)
++            (x0, x1) = (tw * dx, tw * (dx + 1))
++            (y0, y1) = (th * dy, th * (dy + 1))
++            image = image.crop(x0, y0, x1, y1)
++            image = image.resample((256,256))
 +
 +        return respond_with_image(image)
 +
@@ -741,6 +804,47 @@ index 0000000..c21fa6a
 +        return response
 +
 +    return make_tile_server(port, tile)
+diff --git a/geonotebook/vis/utils.py b/geonotebook/vis/utils.py
+index 16f0a56..655e85a 100644
+--- a/geonotebook/vis/utils.py
++++ b/geonotebook/vis/utils.py
+@@ -57,7 +57,7 @@ def discrete_colors(colormap, count):
+ class RasterStyleOptions(object):
+     def __init__(self, opacity=1.0, gamma=1.0, projection='EPSG:3857',
+                  kernel_id=None, zIndex=None, colormap=None, interval=None,
+-                 layer_type=None, attribution=None, **kwargs):
++                 max_zoom=18, layer_type=None, attribution=None, **kwargs):
+ 
+         # self.vis_url = vis_url
+         self.opacity = opacity
+@@ -65,6 +65,7 @@ class RasterStyleOptions(object):
+         self.gamma = gamma
+         self.interval = interval
+         self.colormap = None
++        self.max_zoom = max_zoom
+         self.zIndex = zIndex
+         self.kernel_id = kernel_id
+         self.layer_type = layer_type
+@@ -112,7 +113,8 @@ class RasterStyleOptions(object):
+             'colormap': self.colormap,
+             'kernel_id': self.kernel_id,
+             'zIndex': self.zIndex,
+-            'attribution': self.attribution
++            'attribution': self.attribution,
++            'max_zoom': self.max_zoom
+         }
+ 
+     def __hash__(self):
+@@ -125,7 +127,8 @@ class RasterStyleOptions(object):
+             tuple(tuple(c.items()) for c in self.colormap),
+             self.kernel_id,
+             self.zIndex,
+-            self.attribution))
++            self.attribution,
++            self.max_zoom))
+ 
+ 
+ class VectorStyleOptions(object):
 diff --git a/geonotebook/wrappers/__init__.py b/geonotebook/wrappers/__init__.py
 index f95e8af..06e5cf3 100644
 --- a/geonotebook/wrappers/__init__.py
@@ -760,10 +864,10 @@ index f95e8af..06e5cf3 100644
 +           'RddRasterData',
 +           'GeoTrellisCatalogLayerData')
 diff --git a/geonotebook/wrappers/raster.py b/geonotebook/wrappers/raster.py
-index b2a83d3..3eda93b 100644
+index b2a83d3..2651e9f 100644
 --- a/geonotebook/wrappers/raster.py
 +++ b/geonotebook/wrappers/raster.py
-@@ -8,6 +8,46 @@ import pkg_resources as pr
+@@ -8,6 +8,75 @@ import pkg_resources as pr
  
  from shapely.geometry import Polygon
  
@@ -788,11 +892,14 @@ index b2a83d3..3eda93b 100644
 +    def __init__(self,
 +                 geopysc,
 +                 catalog_uri,
-+                 layer_name,
++                 layer_names,
 +                 key_type = None,
 +                 tile_type = None,
-+                 options = None,):
-+        from geopyspark.geotrellis.catalog import _construct_catalog, _mapped_cached
++                 options = None,
++                 name = None):
++        from geopyspark.geotrellis.catalog import (_construct_catalog,
++                                                   _mapped_cached,
++                                                   get_layer_ids)
 +        from geopyspark.geotrellis.constants import SPATIAL, TILE
 +
 +        if not key_type:
@@ -803,10 +910,36 @@ index b2a83d3..3eda93b 100644
 +        catalog = _mapped_cached[catalog_uri]
 +        self.catalog_uri = catalog_uri
 +        self.value_reader = catalog.value_reader
-+        self.layer_name = layer_name
 +        self.key_type =  geopysc.map_key_input(key_type, True)
 +        self.tile_type = tile_type
 +        self.avroregistry = geopysc.avroregistry
++
++        self.is_multi_layer = not isinstance(layer_names, str)
++        if not self.is_multi_layer:
++            self.layer_names = [layer_names]
++        else:
++            self.layer_names = layer_names
++
++        # Get the max zoom
++        layer_ids = list(get_layer_ids(geopysc, catalog_uri))
++        zooms = { }
++        for lid in layer_ids:
++            ln = lid['name']
++            if ln in self.layer_names:
++                if not ln in zooms:
++                    zooms[ln] = []
++                zooms[ln].append(int(lid['zoom']))
++
++        self.layer_zoom_ranges = {}
++        for ln in zooms:
++            self.layer_zoom_ranges[ln] = (min(zooms[ln]), max(zooms[ln]))
++        self.max_zoom = min(map(lambda x: x[1], self.layer_zoom_ranges.values()))
++
++        if not name:
++            self.name = ','.join(self.layer_names)
++        else:
++            self.name = name
++
  
  class RasterData(collections.Sequence):
      _default_schema = 'file'
@@ -860,6 +993,113 @@ index 6ffdad5..a43f0b8 100644
 +    def geojson(self):
 +        """Return an object (geojson) representation."""
 +        return self._geojson
+diff --git a/js/src/map/base.js b/js/src/map/base.js
+index b09e440..9b1fade 100644
+--- a/js/src/map/base.js
++++ b/js/src/map/base.js
+@@ -34,6 +34,7 @@ var color_counter = 0;
+ const msg_types = [
+   'get_protocol',
+   'set_center',
++  'set_zoom_range',
+   'debug',
+   'add_layer',
+   'update_layer',
+@@ -66,6 +67,7 @@ const annotation_types = {
+  *   * _init_map()
+  *   * _resize(size)
+  *   * _set_center(x, y, z)
++ *   * _set_zoom_range(min, max)
+  *   * _add_annotation_layer(name)
+  *   * _add_osm_layer(name, url, vis, query)
+  *   * _add_wms_layer(name, url, vis, query)
+@@ -112,6 +114,15 @@ class MapObject {
+   }
+ 
+   /**
++   * Set the zoom range of the map.
++   * @param {number} min The min zoom level
++   * @param {number} max The max zoom level
++   */
++  set_zoom_range (min, max) {
++    return this._set_zoom_range(min, max);
++  }
++
++  /**
+    * Add a new layer to the map.  The layer type is inferred from
+    * the vis_params object.  This will delegate to the map
+    * renderer to generate a layer of the appropriate type.
+diff --git a/js/src/map/geojs.js b/js/src/map/geojs.js
+index d1783e4..c15d9c7 100644
+--- a/js/src/map/geojs.js
++++ b/js/src/map/geojs.js
+@@ -28,6 +28,11 @@ class GeoJSMap extends BaseMap {
+     return [x, y, z];
+   }
+ 
++  _set_zoom_range (min, max) {
++    this.geojsmap.zoomRange({min: min, max: max});
++    return [min, max];
++  }
++
+   _add_annotation_layer (name) {
+     var layer = this.geojsmap.createLayer('annotation', {
+       annotations: ['rectangle', 'point', 'polygon']
+@@ -55,6 +60,10 @@ class GeoJSMap extends BaseMap {
+     if (vis.attribution) {
+       opts.attribution = vis.attribution;
+     }
++    if(vis.maxZoom) {
++      opts.maxZoom = vis.maxZoom;
++    }
++
+     var osm = this.geojsmap.createLayer('osm', opts);
+ 
+     osm.name(name);
+@@ -67,10 +76,13 @@ class GeoJSMap extends BaseMap {
+   }
+ 
+   _add_tiled_layer (name, url, vis, query) {
+-    var layer = this.geojsmap.createLayer('osm', {
+-      attribution: null,
+-      keepLower: false
+-    });
++    var opts = { attribution: null, keepLower: false };
++    if(vis.max_zoom) {
++      opts.maxLevel = vis.max_zoom;
++    }
++    console.log(opts.maxLevel);
++
++    var layer = this.geojsmap.createLayer('osm', opts);
+     var params = '';
+ 
+     if ($.param(query)) {
+@@ -80,7 +92,7 @@ class GeoJSMap extends BaseMap {
+     layer.name(name);
+     layer.url((x, y, z) => `${url}/${x}/${y}/${z}.png${params}`);
+ 
+-      // make sure zindex is explicitly set
++    // make sure zindex is explicitly set
+     this._set_layer_zindex(layer, vis['zIndex']);
+ 
+     return layer;
+@@ -89,10 +101,12 @@ class GeoJSMap extends BaseMap {
+   _add_wms_layer (name, url, vis, query) {
+     var projection = query['projection'] || 'EPSG:3857';
+ 
+-    var wms = this.geojsmap.createLayer('osm', {
+-      keepLower: false,
+-      attribution: null
+-    });
++    var opts = { attribution: null, keepLower: false };
++    if(vis.maxZoom) {
++      opts.maxZoom = vis.maxZoom;
++    }
++
++    var wms = this.geojsmap.createLayer('osm', opts);
+ 
+       // make sure zindex is explicitly set
+     this._set_layer_zindex(wms, vis['zIndex']);
 diff --git a/moop.txt b/moop.txt
 new file mode 100644
 index 0000000..f625674
@@ -1520,6 +1760,16 @@ index bc17295..ddf0d3e 100644
    }
   },
   "nbformat": 4,
+diff --git a/requirements.txt b/requirements.txt
+index 97b333b..3befbdb 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -13,3 +13,5 @@ matplotlib
+ pyproj
+ pandas
+ lxml
++gevent
++flask
 diff --git a/setup.py b/setup.py
 index 58d60fa..51f2329 100644
 --- a/setup.py
