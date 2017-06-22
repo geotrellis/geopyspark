@@ -35,22 +35,23 @@ two commands will download these files for you:
   import json
   from functools import partial
 
-  from geopyspark.geopycontext import GeoPyContext
   from geopyspark.geotrellis.constants import SPATIAL, ZOOM
   from geopyspark.geotrellis.geotiff_rdd import get
   from geopyspark.geotrellis.catalog import write
+
+  from pyspark import SparkContext
 
   from shapely.geometry import Polygon, shape
   from shapely.ops import transform
   import pyproj
 
 
-  # Create the GeoPyContext
-  geopysc = GeoPyContext(appName="example", master="local[*]")
+  # Create the SparkContext
+  pysc = SparkContext(appName="example", master="local[*]")
 
   # Read in the NLCD tif that has been saved locally.
   # This tif represents the state of Pennsylvania.
-  raster_rdd = get(geopysc=geopysc, rdd_type=SPATIAL,
+  raster_rdd = get(pysc=pysc, rdd_type=SPATIAL,
   uri='/tmp/NLCD2011_LC_Pennsylvania.tif',
   options={'numPartitions': 100})
 

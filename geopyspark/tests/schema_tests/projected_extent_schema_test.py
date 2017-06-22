@@ -17,20 +17,20 @@ class ProjectedExtentSchemaTest(BaseTestClass):
         {'epsg': 2004, 'extent': {'xmax': 3.0, 'xmin': 1.0, 'ymax': 4.0, 'ymin': 2.0}, 'proj4': None},
         {'epsg': 2004, 'extent': {'xmax': 7.0, 'xmin': 5.0, 'ymax': 8.0, 'ymin': 6.0}, 'proj4': None}]
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.ProjectedExtentWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    ew = BaseTestClass.pysc._gateway.jvm.geopyspark.geotrellis.tests.schemas.ProjectedExtentWrapper
 
     java_rdd = ew.testOut(sc)
     ser = ProtoBufSerializer(projected_extent_decoder,
                              projected_extent_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = [pex._asdict() for pex in rdd.collect()]
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def result_checker(self, actual_pe, expected_pe):
         for actual, expected in zip(actual_pe, expected_pe):

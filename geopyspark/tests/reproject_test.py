@@ -19,7 +19,7 @@ class ReprojectTest(BaseTestClass):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def test_same_crs_layout(self):
         result = self.laid_out_rdd.reproject("EPSG:4326", extent =self.extent, layout=self.layout)

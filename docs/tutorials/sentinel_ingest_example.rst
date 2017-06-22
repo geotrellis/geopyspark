@@ -67,13 +67,14 @@ The Code
   import rasterio
   import numpy as np
 
-  from geopyspark.geopycontext import GeoPyContext
   from geopyspark.geotrellis.constants import SPATIAL, ZOOM
   from geopyspark.geotrellis.catalog import write
   from geopyspark.geotrellis.rdd import RasterRDD
 
+  from pyspark import SparkContext
 
-  geopysc = GeoPyContext(appName="sentinel-ingest", master="local[*]")
+
+  pysc = SparkContext(appName="sentinel-ingest", master="local[*]")
 
   jp2s = ["/tmp/B01.jp2", "/tmp/B09.jp2", "/tmp/B10.jp2"]
   arrs = []
@@ -103,8 +104,8 @@ The Code
   extent = {'xmin': bounds.left, 'ymin': bounds.bottom, 'xmax': bounds.right, 'ymax': bounds.top}
   projected_extent = {'extent': extent, 'epsg': epsg_code}
 
-  rdd = geopysc.pysc.parallelize([(projected_extent, tile)])
-  raster_rdd = RasterRDD.from_numpy_rdd(geopysc, SPATIAL, rdd)
+  rdd = pysc.parallelize([(projected_extent, tile)])
+  raster_rdd = RasterRDD.from_numpy_rdd(pysc, SPATIAL, rdd)
 
   metadata = raster_rdd.collect_metadata()
   laid_out = raster_rdd.tile_to_layout(metadata)
@@ -215,8 +216,8 @@ Formatting the Data
   extent = {'xmin': bounds.left, 'ymin': bounds.bottom, 'xmax': bounds.right, 'ymax': bounds.top}
   projected_extent = {'extent': extent, 'epsg': epsg_code}
 
-  rdd = geopysc.pysc.parallelize([(projected_extent, tile)])
-  raster_rdd = RasterRDD.from_numpy_rdd(geopysc, SPATIAL, rdd)
+  rdd = pysc.parallelize([(projected_extent, tile)])
+  raster_rdd = RasterRDD.from_numpy_rdd(pysc, SPATIAL, rdd)
 
 
 GeoPySpark is a Python binding of GeoTrellis, and because of that, requires the

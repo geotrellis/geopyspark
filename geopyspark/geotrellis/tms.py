@@ -54,16 +54,17 @@ class TileRender(object):
         implements = ["geopyspark.geotrellis.tms.TileRender"]
 
 class TMSServer(object):
-    def __init__(self, geopysc, server):
-        self.geopysc = geopysc
+    def __init__(self, pysc, server):
+        self.pysc = pysc
         self.server = server
         self.handshake = ''
+        self.pysc._gateway.start_callback_server()
 
     def set_handshake(self, handshake):
         self.server.set_handshake(handshake)
         self.handshake = handshake
 
-def s3_catalog_tms_server(geopysc, bucket, root, catalog, colormap):
+def s3_catalog_tms_server(pysc, bucket, root, catalog, colormap):
     """A function to create a TMS server for a catalog stored in an S3 bucket.
 
     Args:
@@ -75,10 +76,10 @@ def s3_catalog_tms_server(geopysc, bucket, root, catalog, colormap):
     Returns:
         [TMSServer]
     """
-    server = geopysc._jvm.geopyspark.geotrellis.tms.TMSServer.serveS3Catalog(bucket, root, catalog, colormap.cmap)
-    return TMSServer(geopysc, server)
+    server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveS3Catalog(bucket, root, catalog, colormap.cmap)
+    return TMSServer(pysc, server)
 
-def remote_tms_server(geopysc, pattern_url):
+def remote_tms_server(pysc, pattern_url):
     """A function to create a TMS server delivering tiles from a remote TMS server
 
     Args:
@@ -90,13 +91,13 @@ def remote_tms_server(geopysc, pattern_url):
     Returns:
         [TMSServer]
     """
-    server = geopysc._jvm.geopyspark.geotrellis.tms.TMSServer.serveRemoteTMSLayer(pattern_url)
-    return TMSServer(geopysc, server)
+    server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveRemoteTMSLayer(pattern_url)
+    return TMSServer(pysc, server)
 
 
-def rdd_tms_server(geopysc, pyramid, colormap):
+def rdd_tms_server(pysc, pyramid, colormap):
     if isinstance(pyramid, list):
         pyramid = Pyramid(pyramid)
     rdd_levels = {k: v.srdd.rdd() for k, v in pyramid.levels.items()}
-    server = geopysc._jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRdd(rdd_levels, colormap.cmap, 0)
-    return TMSServer(geopysc, server)
+    server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRdd(rdd_levels, colormap.cmap, 0)
+    return TMSServer(pysc, server)

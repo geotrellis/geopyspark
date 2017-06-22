@@ -41,7 +41,7 @@ class S3GeoTiffIOTest(object):
 
 
 class Multiband(S3GeoTiffIOTest, BaseTestClass):
-    mock_wrapper = BaseTestClass.geopysc._jvm.geopyspark.geotrellis.testkit.MockS3ClientWrapper
+    mock_wrapper = BaseTestClass.pysc._gateway.jvm.geopyspark.geotrellis.testkit.MockS3ClientWrapper
     client = mock_wrapper.mockClient()
 
     key = "one-month-tiles-multiband/result.tif"
@@ -58,11 +58,11 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
     @pytest.fixture(scope='class', autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def read_multiband_geotrellis(self, opt=options):
         self.client.putObject(self.bucket, self.key, self.data)
-        result = get(BaseTestClass.geopysc,
+        result = get(BaseTestClass.pysc,
                      SPATIAL,
                      self.uri,
                      opt)

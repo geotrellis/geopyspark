@@ -15,7 +15,7 @@ class EuclideanDistanceTest(BaseTestClass):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     latlong = pyproj.Proj(init='epsg:4326')
     webmerc = pyproj.Proj(init='epsg:3857')
@@ -48,7 +48,7 @@ class EuclideanDistanceTest(BaseTestClass):
             x, y = gridToMap(layoutDefinition, spatialKey, px, py)
             return geom.distance(Point(x, y))
 
-        tiled = TiledRasterRDD.euclidean_distance(BaseTestClass.geopysc, self.pts_wm, 3857, 7)
+        tiled = TiledRasterRDD.euclidean_distance(BaseTestClass.pysc, self.pts_wm, 3857, 7)
         result = tiled.stitch()['data'][0]
 
         arr = np.zeros((256,256), dtype=float)

@@ -45,7 +45,7 @@ def get_breaks_from_matplot(ramp_name, num_colors):
     ramp = mpc.get_cmap(ramp_name)
     return  [ struct.unpack('>L', bytes(map(lambda x: int(x*255), ramp(x / (num_colors - 1)))))[0] for x in range(0, num_colors)]
 
-def get_breaks(geopysc, ramp_name, num_colors=None):
+def get_breaks(pysc, ramp_name, num_colors=None):
     """Returns a list of values that represent the breaks in color for the given color ramp.
 
     Args:
@@ -63,11 +63,11 @@ def get_breaks(geopysc, ramp_name, num_colors=None):
     """
 
     if num_colors:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRampUtils.get(ramp_name, num_colors))
+        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.get(ramp_name, num_colors))
     else:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRampUtils.get(ramp_name))
+        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.get(ramp_name))
 
-def get_hex(geopysc, ramp_name, num_colors=None):
+def get_hex(pysc, ramp_name, num_colors=None):
     """Returns a list of the hex values that represent the colors for the given color ramp.
 
     Note:
@@ -88,9 +88,9 @@ def get_hex(geopysc, ramp_name, num_colors=None):
     """
 
     if num_colors:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRampUtils.getHex(ramp_name, num_colors))
+        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.getHex(ramp_name, num_colors))
     else:
-        return list(geopysc._jvm.geopyspark.geotrellis.ColorRampUtils.getHex(ramp_name))
+        return list(pysc._gateway.jvm.geopyspark.geotrellis.ColorRampUtils.getHex(ramp_name))
 
 """A dict giving the color mapping from NLCD values to colors
 """
@@ -124,11 +124,11 @@ class ColorMap(object):
         self.cmap = cmap
 
     @classmethod
-    def from_break_map(cls, geopysc, break_map, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+    def from_break_map(cls, pysc, break_map, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
         """Converts a dictionary mapping from tile values to colors to a ColorMap.
 
         Args:
-            geopysc (GeoPyContext)
+            pysc (pyspark.context.SparkContext): The ``SparkContext`` being used this session.
             break_map (dict): A mapping from tile values to colors, the latter
                 represented as integers---e.g., 0xff000080 is red at half opacity.
             no_data_color(int, optional): A color to replace NODATA values with
@@ -145,18 +145,18 @@ class ColorMap(object):
             [ColorMap]
         """
         if all(isinstance(x, int) for x in break_map.keys()):
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMapUtils.fromMap(break_map, no_data_color, fallback, class_boundary_type))
+            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMap(break_map, no_data_color, fallback, class_boundary_type))
         elif all(isinstance(x, float) for x in break_map.keys()):
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMapUtils.fromMapDouble(break_map, no_data_color, fallback, class_boundary_type))
+            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromMapDouble(break_map, no_data_color, fallback, class_boundary_type))
         else:
             raise TypeError("Break map keys must be either int or float.")
 
     @classmethod
-    def from_colors(cls, geopysc, breaks, color_list, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+    def from_colors(cls, pysc, breaks, color_list, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
         """Converts lists of values and colors to a ColorMap.
 
         Args:
-            geopysc (GeoPyContext)
+            pysc (pyspark.context.SparkContext): The ``SparkContext`` being used this session.
             breaks (list): The tile values that specify breaks in the color
                 mapping
             color_list (int list): The colors corresponding to the values in the
@@ -176,22 +176,22 @@ class ColorMap(object):
             [ColorMap]
         """
         if all(isinstance(x, int) for x in breaks):
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaks(breaks, color_list, no_data_color, fallback, class_boundary_type))
+            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaks(breaks, color_list, no_data_color, fallback, class_boundary_type))
         else:
-            return cls(geopysc._jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaksDouble([float(br) for br in breaks], color_list, no_data_color, fallback, class_boundary_type))
+            return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromBreaksDouble([float(br) for br in breaks], color_list, no_data_color, fallback, class_boundary_type))
 
     @classmethod
-    def from_histogram(cls, geopysc, histogram, color_list, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
-        return cls(geopysc._jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram(histogram, color_list, no_data_color, fallback, class_boundary_type))
+    def from_histogram(cls, pysc, histogram, color_list, no_data_color=0x00000000, fallback=0x00000000, class_boundary_type=LESSTHANOREQUALTO):
+        return cls(pysc._gateway.jvm.geopyspark.geotrellis.ColorMapUtils.fromHistogram(histogram, color_list, no_data_color, fallback, class_boundary_type))
 
     @staticmethod
-    def nlcd_colormap(geopysc):
+    def nlcd_colormap(pysc):
         """Returns a color map for NLCD tiles.
 
         Args:
-            geopysc (GeoPyContext)
+            pysc (pyspark.context.SparkContext): The ``SparkContext`` being used this session.
 
         Returns:
             [ColorMap]
         """
-        return ColorMap.from_break_map(geopysc, nlcd_color_map)
+        return ColorMap.from_break_map(pysc, nlcd_color_map)

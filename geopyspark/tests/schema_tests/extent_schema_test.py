@@ -12,10 +12,10 @@ from geopyspark.tests.base_test_class import BaseTestClass
 
 
 class ExtentSchemaTest(BaseTestClass):
-    ew = BaseTestClass.geopysc._jvm.geopyspark.geotrellis.tests.schemas.ExtentWrapper
-    java_rdd = ew.testOut(BaseTestClass.geopysc.sc)
+    ew = BaseTestClass.pysc._gateway.jvm.geopyspark.geotrellis.tests.schemas.ExtentWrapper
+    java_rdd = ew.testOut(BaseTestClass.pysc._jsc.sc())
     ser = ProtoBufSerializer(extent_decoder, extent_encoder)
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     expected_extents = [
@@ -27,7 +27,7 @@ class ExtentSchemaTest(BaseTestClass):
     @pytest.fixture(scope='class', autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def result_checker(self, actual_result, expected_result):
         for actual, expected in zip(actual_result, expected_result):
@@ -46,4 +46,4 @@ class ExtentSchemaTest(BaseTestClass):
 
 if __name__ == "__main__":
     unittest.main()
-    BaseTestClass.geopysc.pysc.stop()
+    BaseTestClass.pysc.stop()

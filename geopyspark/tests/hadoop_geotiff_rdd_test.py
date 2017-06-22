@@ -46,15 +46,15 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def read_singleband_geotrellis(self, options=None):
         if options is None:
-            result = get(BaseTestClass.geopysc,
+            result = get(BaseTestClass.pysc,
                          SPATIAL,
                          self.dir_path)
         else:
-            result = get(BaseTestClass.geopysc,
+            result = get(BaseTestClass.pysc,
                          SPATIAL,
                          self.dir_path,
                          maxTileSize=256)

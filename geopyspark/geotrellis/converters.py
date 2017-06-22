@@ -1,3 +1,7 @@
+from geopyspark.geopyspark_utils import check_environment
+
+check_environment()
+
 from py4j.java_gateway import JavaObject, JavaMember, get_method, JavaClass
 from py4j.protocol import (
     Py4JError, get_command_part, get_return_value, register_input_converter,

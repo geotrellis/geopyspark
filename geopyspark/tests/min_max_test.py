@@ -18,14 +18,14 @@ class MinMaxTest(BaseTestClass):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def test_all_zeros(self):
         arr = np.zeros((1, 16, 16)).astype('int')
         tile = {'data': arr, 'no_data_value': -500, 'data_type': 'INT'}
 
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
         min_max = raster_rdd.get_min_max()
 
         self.assertEqual((0.0, 0.0), min_max)
@@ -37,8 +37,8 @@ class MinMaxTest(BaseTestClass):
                         [[4, 4, 4, 4]]], dtype=int)
         tile = {'data': arr, 'no_data_value': -500, 'data_type': 'INT'}
 
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
         min_max = raster_rdd.get_min_max()
 
         self.assertEqual((1.0, 4.0), min_max)
@@ -50,8 +50,8 @@ class MinMaxTest(BaseTestClass):
                          [2.0, 2.0, 2.0, 2.0]]], dtype=float)
 
         tile = {'data': arr, 'no_data_value': float('nan'), 'data_type': 'FLOAT'}
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        rdd = BaseTestClass.pysc.parallelize([(self.projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
         min_max = raster_rdd.get_min_max()
 
         self.assertEqual((0.0, 2.0), min_max)

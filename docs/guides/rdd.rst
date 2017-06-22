@@ -25,13 +25,14 @@ GeoTiffs.
 
 .. code:: python
 
-   from geopyspark.geopycontext import GeoPyContext
    from geopyspark.geotrellis.constants import SPATIAL
    from geopyspark.geotrellis.geotiff_rdd import get
 
-   geopysc = GeoPyContext(appName="rasterrdd-example", master="local")
+   from pyspark import SparkContext
 
-   raster_rdd = get(geopysc=geopysc, rdd_type=SPATIAL, "path/to/your/geotiff.tif")
+   pysc = SparkContext(appName="rasterrdd-example", master="local")
+
+   raster_rdd = get(pysc=pysc, rdd_type=SPATIAL, "path/to/your/geotiff.tif")
 
 Note: If you have multiple GeoTiffs, you can just specify the directory where
 they're all stored. Or if the GeoTiffs are spread out in multiple locations,
@@ -48,14 +49,15 @@ the PySpark RDD to be formatted in a specific way.
 
 .. code:: python
 
-   from geopyspark.geopycontext import GeoPyContext
    from geopyspark.geotrellis import Extent
    from geopyspark.geotrellis.constants import SPATIAL
    from geopyspark.geotrellis.rdd import RasterRDD
 
+   from pyspark import SparkContext
+
    import numpy as np
 
-   geopysc = GeoPyContext(appName="rasterrdd-example", master="local")
+   pysc = SparkContext(appName="rasterrdd-example", master="local")
 
    arr = np.ones((1, 16, 16), dtype=int)
 
@@ -71,9 +73,9 @@ the PySpark RDD to be formatted in a specific way.
    # Create a PySpark RDD that contains a single tuple, (projected_extent, tile)
    # Note: The order of the values in the tuple is important. ProjectedExtent
    # or TemporalProjectedExtent MUST Be the first element.
-   rdd = geopysc.pysc.parallelize([(projected_extent, tile)])
+   rdd = pysc.parallelize([(projected_extent, tile)])
 
-   raster_rdd = RasterRDD.from_numpy_rdd(geopysc=geopysc, rdd_type=SPATIAL, numpy_rdd=rdd)
+   raster_rdd = RasterRDD.from_numpy_rdd(pysc=pysc, rdd_type=SPATIAL, numpy_rdd=rdd)
 
 
 TiledRasterRDD
@@ -91,14 +93,15 @@ From PySpark RDDs
 
 .. code:: python
 
-   from geopyspark.geopycontext import GeoPyContext
    from geopyspark.geotrellis import Extent, TileLayout, Bounds, LayoutDefinition
    from geopyspark.geotrellis.constants import SPATIAL
    from geopyspark.geotrellis.rdd import TiledRasterRDD
 
+   from pyspark import SparkContext
+
    import numpy as np
 
-   geopysc = GeoPyContext(appName="tiledrasterrdd-example", master="local")
+   pysc = SparkContext(appName="tiledrasterrdd-example", master="local")
 
    data = np.array([[
        [1.0, 1.0, 1.0, 1.0, 1.0],
@@ -116,7 +119,7 @@ From PySpark RDDs
             ({'row': 1, 'col': 1}, {'no_data_value': -1.0, 'data': data})]
 
    # Creating the PySpark RDD.
-   rdd = BaseTestClass.geopysc.pysc.parallelize(layer)
+   rdd = pysc.parallelize(layer)
 
    # All TiledRasterRDDs have metadata that describes the layout of data within
    # it. Therefore, in order to create it from a PySpark RDD, the metadata must
@@ -133,7 +136,7 @@ From PySpark RDDs
        extent=extent,
        layout_definition=layout_definition)
 
-   tiled_rdd = TiledRasterRDD.from_numpy_rdd(geopysc=geopysc, rdd_type=SPATIAL,
+   tiled_rdd = TiledRasterRDD.from_numpy_rdd(pysc=pysc, rdd_type=SPATIAL,
                                              numpy_rdd=rdd, metadata=metadata)
 
 
@@ -146,14 +149,15 @@ method.
 
 .. code:: python
 
-   from geopyspark.geopycontext import GeoPyContext
    from geopyspark.geotrellis import Extent
    from geopyspark.geotrellis.constants import SPATIAL
    from geopyspark.geotrellis.rdd import TiledRasterRDD
 
+   from pyspark import SparkContext
+
    from shapely.geometry import Polygon
 
-   geopysc = GeoPyContext(appName="tiledrasterrdd-example", master="local")
+   pysc = SparkContext(appName="tiledrasterrdd-example", master="local")
 
    extent = Extent(0.0, 0.0, 11.0, 11.0)
 
@@ -161,7 +165,7 @@ method.
 
    # Creates a TiledRasterRDD from a Shapely Polygon. The resulting raster will
    # be 256x256 and all values within it are 1.
-   tiled_rdd = TiledRasterRDD.rasterize(geopysc=geopysc, rdd_type=SPATIAL,
+   tiled_rdd = TiledRasterRDD.rasterize(pysc=pysc, rdd_type=SPATIAL,
                                         geometry=polygon, extent=extent,
                                         cols=256, rows=256, fill_value=1)
 
@@ -178,15 +182,16 @@ negative way.
 
 .. code:: python
 
-   from geopyspark.geopycontext import GeoPyContext
    from geopyspark.geotrellis import Extent
    from geopyspark.geotrellis.constants import SPATIAL
    from geopyspark.geotrellis.rdd import TiledRasterRDD
 
+   from pyspark import SparkContext
+
    from shapely.geometry import MultiPoint
    import pyproj
 
-   geopysc = GeoPyContext(appName="tiledrasterrdd-example", master="local")
+   pysc = SparkContext(appName="tiledrasterrdd-example", master="local")
 
    # Shapely produces points in LatLng by default. However, GeoPySpark tends to
    # work with values in WebMercator, so we must reproject the geometries.
@@ -197,7 +202,7 @@ negative way.
 
    # Makes a TiledRasterRDD from the Euclidean distance calculation.
    # The resulting TiledRasterRDD will have a zoom level of 7.
-   tiled_rdd = TiledRasterRDD.euclidean_distance(geopysc=geopysc,
+   tiled_rdd = TiledRasterRDD.euclidean_distance(pysc=pysc,
                                                  geometry=points,
                                                  source_crs=3857,
                                                  zoom=7)

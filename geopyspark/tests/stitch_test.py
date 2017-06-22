@@ -22,7 +22,7 @@ class StitchTest(BaseTestClass):
              (SpatialKey(0, 1), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'}),
              (SpatialKey(1, 0), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'}),
              (SpatialKey(1, 1), {'no_data_value': -1.0, 'data': data, 'data_type': 'FLOAT'})]
-    rdd = BaseTestClass.geopysc.pysc.parallelize(layer)
+    rdd = BaseTestClass.pysc.parallelize(layer)
 
     extent = {'xmin': 0.0, 'ymin': 0.0, 'xmax': 33.0, 'ymax': 33.0}
     layout = {'layoutCols': 2, 'layoutRows': 2, 'tileCols': 5, 'tileRows': 5}
@@ -36,12 +36,12 @@ class StitchTest(BaseTestClass):
                     'extent': extent,
                     'tileLayout': {'tileCols': 5, 'tileRows': 5, 'layoutCols': 2, 'layoutRows': 2}}}
 
-    raster_rdd = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, metadata)
+    raster_rdd = TiledRasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd, metadata)
 
     @pytest.fixture(scope='class', autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def test_stitch(self):
         result = self.raster_rdd.stitch()

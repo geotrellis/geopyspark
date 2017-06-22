@@ -24,9 +24,10 @@ colors for each tile in order for it to displayed correctly.
   from flask import Flask, make_response
   from PIL import Image
 
-  from geopyspark.geopycontext import GeoPyContext
   from geopyspark.geotrellis.catalog import read_value
   from geopyspark.geotrellis.constants import SPATIAL
+
+  from pyspark import SparkContext
 
 
   # normalize the data so that it falls in the range of 0 - 255
@@ -41,7 +42,7 @@ colors for each tile in order for it to displayed correctly.
   def tile(x, y, zoom):
       # fetch tile
 
-      tile = read_value(geopysc, SPATIAL, uri, layer_name, zoom, x, y)
+      tile = read_value(pysc, SPATIAL, uri, layer_name, zoom, x, y)
       arr = tile['data']
 
       bands = arr.shape[0]
@@ -64,7 +65,7 @@ colors for each tile in order for it to displayed correctly.
       uri = "file:///tmp/sentinel-catalog"
       layer_name = "sentinel-example"
 
-      geopysc = GeoPyContext(appName="s3-flask", master="local[*]")
+      pysc = SparkContext(appName="s3-flask", master="local[*]")
 
       with open('/tmp/sentinel_stats.txt', 'r') as f:
           lines = f.readlines()
@@ -104,7 +105,7 @@ Setup
       uri = "file:///tmp/sentinel-catalog"
       layer_name = "sentinel-example"
 
-      geopysc = GeoPyContext(appName="s3-flask", master="local[*]")
+      pysc = SparkContext(appName="s3-flask", master="local[*]")
 
       with open('/tmp/sentinel_stats.txt', 'r') as f:
           lines = f.readlines()
@@ -134,7 +135,7 @@ Preparing the Tile
   def tile(x, y, zoom):
       # fetch tile
 
-      tile = read_value(geopysc, SPATIAL, uri, layer_name, zoom, x, y)
+      tile = read_value(pysc, SPATIAL, uri, layer_name, zoom, x, y)
       arr = tile['data']
 
       bands = arr.shape[0]

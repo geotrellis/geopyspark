@@ -15,7 +15,7 @@ class PyramidingTest(BaseTestClass):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def test_correct_base(self):
         arr = np.zeros((1, 16, 16))
@@ -25,8 +25,8 @@ class PyramidingTest(BaseTestClass):
         tile = {'data': arr, 'no_data_value': False, 'data_type': 'FLOAT'}
         projected_extent = ProjectedExtent(extent, epsg_code)
 
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
         tile_layout = TileLayout(32, 32, 16, 16)
         new_extent = Extent(-20037508.342789244, -20037508.342789244, 20037508.342789244,
                             20037508.342789244)
@@ -46,8 +46,8 @@ class PyramidingTest(BaseTestClass):
         tile = {'data': arr, 'no_data_value': False, 'data_type': 'FLOAT'}
         projected_extent = ProjectedExtent(extent, epsg_code)
 
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
         tile_layout = TileLayout(32, 32, 16, 16)
         new_extent = Extent(-20037508.342789244, -20037508.342789244, 20037508.342789244,
                             20037508.342789244)
@@ -68,9 +68,9 @@ class PyramidingTest(BaseTestClass):
         tile = {'data': arr, 'no_data_value': False, 'data_type': 'FLOAT'}
         projected_extent = ProjectedExtent(extent, epsg_code)
 
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(projected_extent, tile)])
+        rdd = BaseTestClass.pysc.parallelize([(projected_extent, tile)])
 
-        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd)
+        raster_rdd = RasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd)
 
         metadata = raster_rdd.collect_metadata(tile_size=250)
         laid_out = raster_rdd.tile_to_layout(metadata)

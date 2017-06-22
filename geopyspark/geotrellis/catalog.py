@@ -5,6 +5,10 @@ import json
 from collections import namedtuple
 from urllib.parse import urlparse
 
+from geopyspark.geopyspark_utils import check_environment
+
+check_environment()
+from geopyspark import map_key_input
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 from geopyspark.geotrellis import Metadata, Extent
 from geopyspark.geotrellis.rdd import TiledRasterRDD
@@ -21,32 +25,32 @@ _cached = namedtuple('Cached', ('store', 'reader', 'value_reader', 'writer'))
 _mapped_bounds = {}
 
 
-def _construct_catalog(geopysc, new_uri, options):
+def _construct_catalog(pysc, new_uri, options):
     if new_uri not in _mapped_cached:
 
-        store_factory = geopysc._jvm.geopyspark.geotrellis.io.AttributeStoreFactory
-        reader_factory = geopysc._jvm.geopyspark.geotrellis.io.LayerReaderFactory
-        value_reader_factory = geopysc._jvm.geopyspark.geotrellis.io.ValueReaderFactory
-        writer_factory = geopysc._jvm.geopyspark.geotrellis.io.LayerWriterFactory
+        store_factory = pysc._gateway.jvm.geopyspark.geotrellis.io.AttributeStoreFactory
+        reader_factory = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerReaderFactory
+        value_reader_factory = pysc._gateway.jvm.geopyspark.geotrellis.io.ValueReaderFactory
+        writer_factory = pysc._gateway.jvm.geopyspark.geotrellis.io.LayerWriterFactory
 
         parsed_uri = urlparse(new_uri)
         backend = parsed_uri.scheme
 
         if backend == 'hdfs':
-            store = store_factory.buildHadoop(new_uri, geopysc.sc)
-            reader = reader_factory.buildHadoop(store, geopysc.sc)
+            store = store_factory.buildHadoop(new_uri, pysc._jsc.sc())
+            reader = reader_factory.buildHadoop(store, pysc._jsc.sc())
             value_reader = value_reader_factory.buildHadoop(store)
             writer = writer_factory.buildHadoop(store)
 
         elif backend == 'file':
             store = store_factory.buildFile(new_uri[7:])
-            reader = reader_factory.buildFile(store, geopysc.sc)
+            reader = reader_factory.buildFile(store, pysc._jsc.sc())
             value_reader = value_reader_factory.buildFile(store)
             writer = writer_factory.buildFile(store)
 
         elif backend == 's3':
             store = store_factory.buildS3(parsed_uri.netloc, parsed_uri.path[1:])
-            reader = reader_factory.buildS3(store, geopysc.sc)
+            reader = reader_factory.buildS3(store, pysc._jsc.sc())
             value_reader = value_reader_factory.buildS3(store)
             writer = writer_factory.buildS3(store)
 
@@ -66,7 +70,7 @@ def _construct_catalog(geopysc, new_uri, options):
                 parameter_dict['table'],
                 options)
 
-            reader = reader_factory.buildCassandra(store, geopysc.sc)
+            reader = reader_factory.buildCassandra(store, pysc._jsc.sc())
             value_reader = value_reader_factory.buildCassandra(store)
             writer = writer_factory.buildCassandra(store,
                                                    parameter_dict['keyspace'],
@@ -84,7 +88,7 @@ def _construct_catalog(geopysc, new_uri, options):
                 master = ""
 
             store = store_factory.buildHBase(zookeepers, master, port, table)
-            reader = reader_factory.buildHBase(store, geopysc.sc)
+            reader = reader_factory.buildHBase(store, pysc._jsc.sc())
             value_reader = value_reader_factory.buildHBase(store)
             writer = writer_factory.buildHBase(store, table)
 
@@ -102,7 +106,7 @@ def _construct_catalog(geopysc, new_uri, options):
 
             reader = reader_factory.buildAccumulo(split_parameters[1],
                                                   store,
-                                                  geopysc.sc)
+                                                  pysc._jsc.sc())
 
             value_reader = value_reader_factory.buildAccumulo(store)
 
@@ -118,9 +122,9 @@ def _construct_catalog(geopysc, new_uri, options):
                                           value_reader=value_reader,
                                           writer=writer)
 
-def _in_bounds(geopysc, rdd_type, uri, layer_name, zoom_level, col, row):
+def _in_bounds(pysc, rdd_type, uri, layer_name, zoom_level, col, row):
     if (layer_name, zoom_level) not in _mapped_bounds:
-        layer_metadata = read_layer_metadata(geopysc, rdd_type, uri, layer_name, zoom_level)
+        layer_metadata = read_layer_metadata(pysc, rdd_type, uri, layer_name, zoom_level)
         bounds = layer_metadata.bounds
         _mapped_bounds[(layer_name, zoom_level)] = bounds
     else:
@@ -135,7 +139,7 @@ def _in_bounds(geopysc, rdd_type, uri, layer_name, zoom_level, col, row):
         return True
 
 
-def read_layer_metadata(geopysc,
+def read_layer_metadata(pysc,
                         rdd_type,
                         uri,
                         layer_name,
@@ -145,7 +149,7 @@ def read_layer_metadata(geopysc,
     """Reads the metadata from a saved layer without reading in the whole layer.
 
     Args:
-        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.context.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -170,7 +174,7 @@ def read_layer_metadata(geopysc,
     else:
         options = {}
 
-    _construct_catalog(geopysc, uri, options)
+    _construct_catalog(pysc, uri, options)
     cached = _mapped_cached[uri]
 
     if rdd_type == SPATIAL:
@@ -180,7 +184,7 @@ def read_layer_metadata(geopysc,
 
     return Metadata.from_dict(json.loads(metadata))
 
-def get_layer_ids(geopysc,
+def get_layer_ids(pysc,
                   uri,
                   options=None,
                   **kwargs):
@@ -188,7 +192,7 @@ def get_layer_ids(geopysc,
     name and zoom of a given layer.
 
     Args:
-        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.context.SparkContext): The ``SparkContext`` being used this session.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
             catalog to be read from. The shape of this string varies depending on backend.
         options (dict, optional): Additional parameters for reading the layer for specific backends.
@@ -212,12 +216,12 @@ def get_layer_ids(geopysc,
     else:
         options = {}
 
-    _construct_catalog(geopysc, uri, options)
+    _construct_catalog(pysc, uri, options)
     cached = _mapped_cached[uri]
 
     return list(cached.reader.layerIds())
 
-def read(geopysc,
+def read(pysc,
          rdd_type,
          uri,
          layer_name,
@@ -233,7 +237,7 @@ def read(geopysc,
         use :func:`query` instead.
 
     Args:
-        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.context.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -258,20 +262,20 @@ def read(geopysc,
     else:
         options = {}
 
-    _construct_catalog(geopysc, uri, options)
+    _construct_catalog(pysc, uri, options)
 
     cached = _mapped_cached[uri]
 
-    key = geopysc.map_key_input(rdd_type, True)
+    key = map_key_input(rdd_type, True)
 
     if numPartitions is None:
-        numPartitions  = geopysc.pysc.defaultMinPartitions
+        numPartitions = pysc.defaultMinPartitions
 
     srdd = cached.reader.read(key, layer_name, layer_zoom, numPartitions)
 
-    return TiledRasterRDD(geopysc, rdd_type, srdd)
+    return TiledRasterRDD(pysc, rdd_type, srdd)
 
-def read_value(geopysc,
+def read_value(pysc,
                rdd_type,
                uri,
                layer_name,
@@ -290,7 +294,7 @@ def read_value(geopysc,
         When requesting a tile that does not exist, ``None`` will be returned.
 
     Args:
-        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.context.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
         uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
@@ -312,7 +316,7 @@ def read_value(geopysc,
         :ref:`raster` or ``None``
     """
 
-    if not _in_bounds(geopysc, rdd_type, uri, layer_name, layer_zoom, col, row):
+    if not _in_bounds(pysc, rdd_type, uri, layer_name, layer_zoom, col, row):
         return None
     else:
         if options:
@@ -323,14 +327,14 @@ def read_value(geopysc,
             options = {}
 
         if uri not in _mapped_cached:
-            _construct_catalog(geopysc, uri, options)
+            _construct_catalog(pysc, uri, options)
 
         cached = _mapped_cached[uri]
 
         if not zdt:
             zdt = ""
 
-        key = geopysc.map_key_input(rdd_type, True)
+        key = map_key_input(rdd_type, True)
 
         values = cached.value_reader.readTile(key,
                                               layer_name,
@@ -341,7 +345,7 @@ def read_value(geopysc,
 
         return multibandtile_decoder(values)
 
-def query(geopysc,
+def query(pysc,
           rdd_type,
           uri,
           layer_name,
@@ -362,7 +366,7 @@ def query(geopysc,
         been set, or if the querried region contains the entire layer.
 
     Args:
-        geopysc (:class:`~geopyspark.GeoPyContext`): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.context.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``. Note: All of the
             GeoTiffs must have the same saptial type.
@@ -405,11 +409,11 @@ def query(geopysc,
     else:
         options = {}
 
-    _construct_catalog(geopysc, uri, options)
+    _construct_catalog(pysc, uri, options)
 
     cached = _mapped_cached[uri]
 
-    key = geopysc.map_key_input(rdd_type, True)
+    key = map_key_input(rdd_type, True)
 
     if time_intervals is None:
         time_intervals = []
@@ -420,7 +424,7 @@ def query(geopysc,
         proj_query = "EPSG:" + str(proj_query)
 
     if numPartitions is None:
-        numPartitions  = geopysc.pysc.defaultMinPartitions
+        numPartitions = pysc.defaultMinPartitions
 
     if isinstance(intersects, Polygon) or isinstance(intersects, MultiPolygon) \
        or isinstance(intersects, Point):
@@ -451,7 +455,7 @@ def query(geopysc,
     else:
         raise TypeError("Could not query intersection", intersects)
 
-    return TiledRasterRDD(geopysc, rdd_type, srdd)
+    return TiledRasterRDD(pysc, rdd_type, srdd)
 
 def write(uri,
           layer_name,
@@ -490,7 +494,7 @@ def write(uri,
     else:
         options = {}
 
-    _construct_catalog(tiled_raster_rdd.geopysc, uri, options)
+    _construct_catalog(tiled_raster_rdd.pysc, uri, options)
 
     cached = _mapped_cached[uri]
 

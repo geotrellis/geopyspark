@@ -26,14 +26,14 @@ class LocalOpertaionsTest(BaseTestClass):
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def test_add_int(self):
         arr = np.zeros((1, 4, 4))
 
         tile = {'data': arr, 'no_data_value': -500, 'data_type': 'FLOAT'}
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile)])
-        tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, self.metadata)
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
+        tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd, self.metadata)
 
         result = tiled + 1
         actual = result.to_numpy_rdd().first()[1]['data']
@@ -47,8 +47,8 @@ class LocalOpertaionsTest(BaseTestClass):
                          [4.0, 4.0, 4.0, 4.0]]], dtype=float)
 
         tile = {'data': arr, 'no_data_value': -500, 'data_type': 'FLOAT'}
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile)])
-        tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, self.metadata)
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
+        tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd, self.metadata)
 
         result = 5.0 - tiled
         actual = result.to_numpy_rdd().first()[1]['data']
@@ -67,8 +67,8 @@ class LocalOpertaionsTest(BaseTestClass):
                          [4.0, 4.0, 4.0, 4.0]]], dtype=float)
 
         tile = {'data': arr, 'no_data_value': float('nan'), 'data_type': 'FLOAT'}
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile)])
-        tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, self.metadata)
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
+        tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd, self.metadata)
 
         result = 5.0 * tiled
         actual = result.to_numpy_rdd().first()[1]['data']
@@ -94,11 +94,11 @@ class LocalOpertaionsTest(BaseTestClass):
         tile = {'data': arr, 'no_data_value': float('nan'), 'data_type': 'FLOAT'}
         tile2 = {'data': divider, 'no_data_value': float('nan'), 'data_type': 'FLOAT'}
 
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile)])
-        rdd2 = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile2)])
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
+        rdd2 = BaseTestClass.pysc.parallelize([(self.spatial_key, tile2)])
 
-        tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, self.metadata)
-        tiled2 = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd2, self.metadata)
+        tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd, self.metadata)
+        tiled2 = TiledRasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd2, self.metadata)
 
         result = tiled / tiled2
         actual = result.to_numpy_rdd().first()[1]['data']
@@ -113,9 +113,9 @@ class LocalOpertaionsTest(BaseTestClass):
 
         tile = {'data': arr, 'no_data_value': -500, 'data_type': 'INT'}
 
-        rdd = BaseTestClass.geopysc.pysc.parallelize([(self.spatial_key, tile)])
+        rdd = BaseTestClass.pysc.parallelize([(self.spatial_key, tile)])
 
-        tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.geopysc, SPATIAL, rdd, self.metadata)
+        tiled = TiledRasterRDD.from_numpy_rdd(BaseTestClass.pysc, SPATIAL, rdd, self.metadata)
 
         result = (tiled + tiled) / 2
         actual = result.to_numpy_rdd().first()[1]['data']

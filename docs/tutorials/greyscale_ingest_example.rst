@@ -13,15 +13,17 @@ Here's the code to run the ingest.
 
 .. code:: python
 
-  from geopyspark.geopycontext import GeoPyContext
   from geopyspark.geotrellis.constants import SPATIAL, ZOOM
   from geopyspark.geotrellis.catalog import write
   from geopyspark.geotrellis.geotiff_rdd import get
 
-  geopysc = GeoPyContext(appName="python-ingest", master="local[*]")
+  from pyspark import SparkContext
+
+
+  pysc = SparkContext(appName="python-ingest", master="local[*]")
 
   # Read the GeoTiff from S3
-  rdd = get(geopysc, SPATIAL, "file:///tmp/cropped.tif")
+  rdd = get(pysc, SPATIAL, "file:///tmp/cropped.tif")
 
   metadata = rdd.collect_metadata()
 
@@ -77,17 +79,15 @@ Reading in the Data
 
 .. code:: python
 
- geopysc = GeoPyContext(appName="python-ingest", master="local[*]")
+ pysc = SparkContext(appName="python-ingest", master="local[*]")
 
  # Read the GeoTiff from S3
- rdd = get(geopysc, SPATIAL, "file:///tmp/cropped.tif")
+ rdd = get(pysc, SPATIAL, "file:///tmp/cropped.tif")
 
 Before doing anything when using GeoPySpark, it's best to create a
-:class:`~geopysaprk.GeoPyContext` instance. This acts as a wrapper for
-``SparkContext``, and provides some useful, behind-the-scenes methods for other
-GeoPySpark functions.
+``SparkContext`` instance.
 
-After the creation of ``geopysc`` we can now read the data. For this example,
+After the creation of ``pysc`` we can now read the data. For this example,
 we will be reading a single GeoTiff that contains only spatial data
 (hence :const:`~geopyspark.geotrellis.SPATIAL`). This will create an instance
 of :class:`~geopyspark.geotrellis.rdd.RasterRDD` which will allow us to start

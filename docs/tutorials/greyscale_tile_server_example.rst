@@ -24,9 +24,10 @@ correction.
 
   from PIL import Image
   from flask import Flask, make_response
-  from geopyspark.geopycontext import GeoPyContext
   from geopyspark.geotrellis.catalog import read_value
   from geopyspark.geotrellis.constants import SPATIAL
+
+  from pyspark import SparkContext
 
 
   app = Flask(__name__)
@@ -35,7 +36,7 @@ correction.
   def tile(x, y, zoom):
 
       # fetch tile
-      tile = read_value(geopycontext,
+      tile = read_value(pysc,
                         SPATIAL,
                         uri,
                         layer_name,
@@ -61,7 +62,7 @@ correction.
       uri = "file:///tmp/python-catalog/"
       layer_name = "python-ingest"
 
-      geopycontext = GeoPyContext(appName="server-example", master="local[*]")
+      pysc = SparkContext(appName="server-example", master="local[*]")
 
       app.run()
 
@@ -128,12 +129,12 @@ Setup
       uri = "file:///tmp/python-catalog/"
       layer_name = "python-ingest"
 
-      geopycontext = GeoPyContext(appName="server-example", master="local[*]")
+      pysc = SparkContext(appName="server-example", master="local[*]")
 
       app.run()
 
 Before getting the tiles, we'll need to setup some constants that will be used.
-In this case, the ``uri``, ``layer_name``, and GeoPyContext will remain the
+In this case, the ``uri``, ``layer_name``, and ``pysc`` will remain the
 same each time a tile is fetched. This is also where ``flask`` is started via
 ``app.run()``.
 
@@ -149,7 +150,7 @@ Fetching the Tile
   def tile(x, y, zoom):
 
       # fetch tile
-      tile = read_value(geopycontext,
+      tile = read_value(pysc,
                         SPATIAL,
                         uri,
                         layer_name,

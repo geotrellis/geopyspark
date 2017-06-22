@@ -1,9 +1,10 @@
 """This module contains functions that create ``RasterRDD`` from files."""
 
+from geopyspark import map_key_input
 from geopyspark.geotrellis.rdd import RasterRDD
 from functools import reduce
 
-def get(geopysc,
+def get(pysc,
         rdd_type,
         uri,
         options=None,
@@ -13,7 +14,7 @@ def get(geopysc,
     or ``S3``.
 
     Args:
-        geopysc (geopyspark.GeoPyContext): The ``GeoPyContext`` being used this session.
+        pysc (pyspark.context.SparkContext): The ``SparkContext`` being used this session.
         rdd_type (str): What the spatial type of the geotiffs are. This is
             represented by the constants: ``SPATIAL`` and ``SPACETIME``.
 
@@ -68,34 +69,34 @@ def get(geopysc,
         :class:`~geopyspark.geotrellis.rdd.RasterRDD`
     """
 
-    geotiff_rdd = geopysc._jvm.geopyspark.geotrellis.io.geotiff.GeoTiffRDD
+    geotiff_rdd = pysc._gateway.jvm.geopyspark.geotrellis.io.geotiff.GeoTiffRDD
 
-    key = geopysc.map_key_input(rdd_type, False)
+    key = map_key_input(rdd_type, False)
 
     if kwargs and not options:
         options = kwargs
 
     if options:
         if isinstance(uri, list):
-            srdd = geotiff_rdd.get(geopysc.sc,
+            srdd = geotiff_rdd.get(pysc._jsc.sc(),
                                    key,
                                    uri,
                                    options)
         else:
-            srdd = geotiff_rdd.get(geopysc.sc,
+            srdd = geotiff_rdd.get(pysc._jsc.sc(),
                                    key,
                                    [uri],
                                    options)
     else:
         if isinstance(uri, list):
-            srdd = geotiff_rdd.get(geopysc.sc,
+            srdd = geotiff_rdd.get(pysc._jsc.sc(),
                                    key,
                                    uri,
                                    {})
         else:
-            srdd = geotiff_rdd.get(geopysc.sc,
+            srdd = geotiff_rdd.get(pysc._jsc.sc(),
                                    key,
                                    [uri],
                                    {})
 
-    return RasterRDD(geopysc, rdd_type, srdd)
+    return RasterRDD(pysc, rdd_type, srdd)

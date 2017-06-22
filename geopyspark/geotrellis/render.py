@@ -20,16 +20,16 @@ def get_breaks_from_matplot(ramp_name, num_colors):
     return color.get_breaks_from_matplot(ramp_name, num_colors)
 
 @deprecated
-def get_breaks(geopysc, ramp_name, num_colors=None):
+def get_breaks(pysc, ramp_name, num_colors=None):
     """Deprecated in favor of geopyspark.geotrellis.color.get_breaks
     """
-    return color.get_breaks(geopysc, ramp_name, num_colors=None)
+    return color.get_breaks(pysc, ramp_name, num_colors=None)
 
 @deprecated
-def get_hex(geopysc, ramp_name, num_colors=None):
+def get_hex(pysc, ramp_name, num_colors=None):
     """Deprecated in favor of geopyspark.geotrellis.color.get_hex
     """
-    return color.get_hex(geopysc, ramp_name, num_colors=None)
+    return color.get_hex(pysc, ramp_name, num_colors=None)
 
 
 # What does this do? implements lookup method ... this is a wrapper, a delegator
@@ -44,14 +44,14 @@ class PngRDD(CachableRDD):
         """
 
         level0 = pyramid[0]
-        self.geopysc = level0.geopysc
+        self.pysc = level0.pysc
         self.rdd_type = level0.rdd_type
         self.layer_metadata = dict([(lev.zoom_level, lev.layer_metadata) for lev in pyramid])
         self.max_zoom = level0.zoom_level
         if level0.is_floating_point_layer():
-            self.pngpyramid = dict([(layer.zoom_level, self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asSingleband(layer.srdd, color_map)) for layer in pyramid])
+            self.pngpyramid = dict([(layer.zoom_level, self.pysc._gateway.jvm.geopyspark.geotrellis.PngRDD.asSingleband(layer.srdd, color_map)) for layer in pyramid])
         else:
-            self.pngpyramid = dict([(layer.zoom_level, self.geopysc._jvm.geopyspark.geotrellis.PngRDD.asIntSingleband(layer.srdd, color_map)) for layer in pyramid])
+            self.pngpyramid = dict([(layer.zoom_level, self.pysc._gateway.jvm.geopyspark.geotrellis.PngRDD.asIntSingleband(layer.srdd, color_map)) for layer in pyramid])
         self.debug = debug
         self.is_cached = False
 

@@ -15,20 +15,20 @@ from geopyspark.tests.base_test_class import BaseTestClass
 class SpatialKeySchemaTest(BaseTestClass):
     expected_keys = {'col': 7, 'row': 3}
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.SpatialKeyWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    ew = BaseTestClass.pysc._gateway.jvm.geopyspark.geotrellis.tests.schemas.SpatialKeyWrapper
 
     java_rdd = ew.testOut(sc)
     ser = ProtoBufSerializer(spatial_key_decoder,
                              spatial_key_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = rdd.first()._asdict()
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def result_checker(self, actual_keys, expected_keys):
         self.assertDictEqual(actual_keys, expected_keys)
@@ -55,20 +55,20 @@ class SpaceTimeKeySchemaTest(BaseTestClass):
         {'col': 11, 'row': 5, 'instant': 15}
     ]
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    ew = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.SpaceTimeKeyWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    ew = BaseTestClass.pysc._gateway.jvm.geopyspark.geotrellis.tests.schemas.SpaceTimeKeyWrapper
 
     java_rdd = ew.testOut(sc)
     ser = ProtoBufSerializer(space_time_key_decoder,
                              space_time_key_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = [stk._asdict() for stk in rdd.collect()]
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def result_checker(self, actual_keys, expected_keys):
         for actual, expected in zip(actual_keys, expected_keys):

@@ -20,19 +20,19 @@ class MultibandSchemaTest(BaseTestClass):
     multiband_tile = np.array(bands)
     multiband_dict = {'data': multiband_tile, 'no_data_value': no_data, 'data_type': 'BYTE'}
 
-    sc = BaseTestClass.geopysc.pysc._jsc.sc()
-    mw = BaseTestClass.geopysc.pysc._jvm.geopyspark.geotrellis.tests.schemas.ArrayMultibandTileWrapper
+    sc = BaseTestClass.pysc._jsc.sc()
+    mw = BaseTestClass.pysc._gateway.jvm.geopyspark.geotrellis.tests.schemas.ArrayMultibandTileWrapper
 
     java_rdd = mw.testOut(sc)
     ser = ProtoBufSerializer(multibandtile_decoder, multibandtile_encoder)
 
-    rdd = RDD(java_rdd, BaseTestClass.geopysc.pysc, AutoBatchedSerializer(ser))
+    rdd = RDD(java_rdd, BaseTestClass.pysc, AutoBatchedSerializer(ser))
     collected = rdd.collect()
 
     @pytest.fixture(autouse=True)
     def tearDown(self):
         yield
-        BaseTestClass.geopysc.pysc._gateway.close()
+        BaseTestClass.pysc._gateway.close()
 
     def test_encoded_multibands(self):
         actual_encoded = [multibandtile_encoder(x) for x in self.collected]

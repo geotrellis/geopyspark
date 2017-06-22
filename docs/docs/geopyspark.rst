@@ -5,9 +5,3 @@ geopyspark package
    :members:
    :undoc-members:
    :inherited-members:
-
-geopyspark.GeoPyContext
-------------------------
-
-.. autoclass:: geopyspark.geopycontext.GeoPyContext
-   :members:
