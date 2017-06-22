@@ -72,8 +72,6 @@ class Extent(namedtuple("Extent", 'xmin ymin xmax ymax')):
 class ProjectedExtent(namedtuple("ProjectedExtent", 'extent epsg proj4')):
     """Describes both the area on Earth a raster represents in addition to its CRS.
 
-    Args:
-        extent (:class:`~geopyspark.geotrellis.Extent`): The area the raster represents.
         epsg (int, optional): The EPSG code of the CRS.
         proj4 (str, optional): The Proj.4 string representation of the CRS.
 
@@ -347,3 +345,20 @@ class Metadata(object):
                 "layoutDefinition={})").format(self.bounds, self.cell_type,
                                                self.crs, self.extent,
                                                self.tile_layout, self.layout_definition)
+
+
+from geopyspark.geotrellis.constants import SPATIAL, SPACETIME, ZOOM
+from geopyspark.geotrellis.color import ColorMap
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
+from geopyspark.geotrellis.neighborhoods import (Square, Circle,
+                                                 Nesw, Wedge, Annulus)
+from geopyspark.geotrellis.rdd import RasterRDD, TiledRasterRDD, Pyramid
+from geopyspark.geotrellis.render import PngRDD
+
+
+__all__ = ["Extent", "ProjectedExtent", "TemporalProjectedExtent",
+           "TileLayout", "LayoutDefinition", "SpatialKey",
+           "SpaceTimeKey", "Bounds", "Metadata", "RasterRDD",
+           "TiledRasterRDD", "Pyramid", "PngRDD", "ColorMap",
+           "ProtoBufSerializer", "Square", "Circle", "Nesw",
+           "Wedge", "Annulus", "SPATIAL", "SPACETIME", "ZOOM"]

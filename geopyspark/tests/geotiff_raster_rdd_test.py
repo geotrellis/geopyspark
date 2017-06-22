@@ -4,10 +4,10 @@ import rasterio
 import pytest
 import numpy as np
 
-from geopyspark.geotrellis.constants import SPATIAL, INT32, BOOLRAW
+from geopyspark.geotrellis import SPATIAL, RasterRDD
+from geopyspark.geotrellis.constants import INT32, BOOLRAW
 from geopyspark.tests.python_test_utils import geotiff_test_path
 from geopyspark.geotrellis.geotiff_rdd import get
-from geopyspark.geotrellis.rdd import RasterRDD
 from geopyspark.tests.base_test_class import BaseTestClass
 
 

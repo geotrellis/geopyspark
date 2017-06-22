@@ -4,7 +4,7 @@ check_environment()
 from geopyspark.geotrellis.constants import RESAMPLE_METHODS, NEARESTNEIGHBOR, ZOOM, COLOR_RAMPS
 from .rdd import CachableRDD
 from pyspark.storagelevel import StorageLevel
-import geopyspark.geotrellis.color as color
+from geopyspark.geotrellis import color
 from geopyspark.geotrellis import deprecated
 
 @deprecated

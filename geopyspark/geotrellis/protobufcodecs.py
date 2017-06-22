@@ -6,7 +6,6 @@ check_environment()
 
 from geopyspark.geotrellis import (Extent, ProjectedExtent, TemporalProjectedExtent, SpatialKey,
                                    SpaceTimeKey)
-
 from geopyspark.geotrellis.protobuf.tileMessages_pb2 import (ProtoTile, ProtoMultibandTile,
                                                              ProtoCellType)
 from geopyspark.geotrellis.protobuf import keyMessages_pb2
