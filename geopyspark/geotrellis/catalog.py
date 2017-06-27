@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from geopyspark import map_key_input
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
-from geopyspark.geotrellis import Metadata, Extent
+from geopyspark.geotrellis import Metadata, Extent, deprecated
 from geopyspark.geotrellis.layer import TiledRasterLayer
 from geopyspark.geotrellis.constants import TILE, ZORDER, SPATIAL
 
@@ -219,6 +219,7 @@ def get_layer_ids(pysc,
 
     return list(cached.reader.layerIds())
 
+@deprecated
 def read(pysc,
          rdd_type,
          uri,
@@ -228,50 +229,10 @@ def read(pysc,
          numPartitions=None,
          **kwargs):
 
-    """Reads a single, zoom layer from a GeoTrellis catalog.
+    """Deprecated in favor of geopyspark.geotrellis.catalog.query."""
 
-    Note:
-        This will read the entire layer. If only part of the layer is needed,
-        use :func:`query` instead.
-
-    Args:
-        pysc (pyspark.SparkContext): The ``SparkContext`` being used this session.
-        rdd_type (str): What the spatial type of the geotiffs are. This is
-            represented by the constants: ``SPATIAL`` and ``SPACETIME``.
-        uri (str): The Uniform Resource Identifier used to point towards the desired GeoTrellis
-            catalog to be read from. The shape of this string varies depending on backend.
-        layer_name (str): The name of the GeoTrellis catalog to be read from.
-        layer_zoom (int): The zoom level of the layer that is to be read.
-        options (dict, optional): Additional parameters for reading the layer for specific backends.
-            The dictionary is only used for ``Cassandra`` and ``HBase``, no other backend requires
-            this to be set.
-        numPartitions (int, optional): Sets RDD partition count when reading from catalog.
-        **kwargs: The optional parameters can also be set as keywords arguments. The keywords must
-            be in camel case. If both options and keywords are set, then the options will be used.
-
-    Returns:
-        :class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`
-
-    """
-    if options:
-        options = options
-    elif kwargs:
-        options = kwargs
-    else:
-        options = {}
-
-    _construct_catalog(pysc, uri, options)
-
-    cached = _mapped_cached[uri]
-
-    key = map_key_input(rdd_type, True)
-
-    if numPartitions is None:
-        numPartitions  = pysc.defaultMinPartitions
-
-    srdd = cached.reader.read(key, layer_name, layer_zoom, numPartitions)
-
-    return TiledRasterLayer(pysc, rdd_type, srdd)
+    return query(pysc, rdd_type, uri, layer_name, layer_zoom, options=options,
+                 numPartitions=numPartitions)
 
 def read_value(pysc,
                rdd_type,
@@ -348,9 +309,9 @@ def query(pysc,
           uri,
           layer_name,
           layer_zoom,
-          intersects,
+          query_geom=None,
           time_intervals=None,
-          proj_query=None,
+          query_proj=None,
           options=None,
           numPartitions=None,
           **kwargs):
@@ -372,7 +333,7 @@ def query(pysc,
             catalog to be read from. The shape of this string varies depending on backend.
         layer_name (str): The name of the GeoTrellis catalog to be querried.
         layer_zoom (int): The zoom level of the layer that is to be querried.
-        intersects (bytes or shapely.geometry or :class:`~geopyspark.geotrellis.data_structures.Extent`):
+        query_geom (bytes or shapely.geometry or :class:`~geopyspark.geotrellis.data_structures.Extent`, Optional):
             The desired spatial area to be returned. Can either be a string, a shapely geometry, or
             instance of ``Extent``, or a WKB verson of the geometry.
 
@@ -386,6 +347,8 @@ def query(pysc,
             Note:
                 Only layers that were made from spatial, singleband GeoTiffs can query a ``Point``.
                 All other types are restricted to ``Polygon`` and ``MulitPolygon``.
+
+            If not specified, then the entire layer will be read.
         time_intervals (list, optional): A list of strings that time intervals to query.
             The strings must be in a valid date-time format. This parameter is only used when
             querying spatial-temporal data. The default value is, None. If None, then only the
@@ -414,46 +377,52 @@ def query(pysc,
 
     key = map_key_input(rdd_type, True)
 
-    if time_intervals is None:
-        time_intervals = []
-
-    if proj_query is None:
-        proj_query = ""
-    if isinstance(proj_query, int):
-        proj_query = "EPSG:" + str(proj_query)
-
     if numPartitions is None:
         numPartitions = pysc.defaultMinPartitions
 
-    if isinstance(intersects, (Polygon, MultiPolygon, Point)):
-        srdd = cached.reader.query(key,
-                                   layer_name,
-                                   layer_zoom,
-                                   shapely.wkb.dumps(intersects),
-                                   time_intervals,
-                                   proj_query,
-                                   numPartitions)
+    if not query_geom:
+        srdd = cached.reader.read(key, layer_name, layer_zoom, numPartitions)
+        return TiledRasterLayer(pysc, rdd_type, srdd)
 
-    elif isinstance(intersects, Extent):
-        srdd = cached.reader.query(key,
-                                   layer_name,
-                                   layer_zoom,
-                                   shapely.wkb.dumps(intersects.to_poly),
-                                   time_intervals,
-                                   proj_query,
-                                   numPartitions)
-
-    elif isinstance(intersects, bytes):
-        srdd = cached.reader.query(key,
-                                   layer_name,
-                                   layer_zoom,
-                                   intersects,
-                                   time_intervals,
-                                   proj_query)
     else:
-        raise TypeError("Could not query intersection", intersects)
+        if time_intervals is None:
+            time_intervals = []
 
-    return TiledRasterLayer(pysc, rdd_type, srdd)
+        if query_proj is None:
+            query_proj = ""
+        if isinstance(query_proj, int):
+            query_proj = "EPSG:" + str(query_proj)
+
+        if isinstance(query_geom, (Polygon, MultiPolygon, Point)):
+            srdd = cached.reader.query(key,
+                                       layer_name,
+                                       layer_zoom,
+                                       shapely.wkb.dumps(query_geom),
+                                       time_intervals,
+                                       query_proj,
+                                       numPartitions)
+
+        elif isinstance(query_geom, Extent):
+            srdd = cached.reader.query(key,
+                                       layer_name,
+                                       layer_zoom,
+                                       shapely.wkb.dumps(query_geom.to_poly),
+                                       time_intervals,
+                                       query_proj,
+                                       numPartitions)
+
+        elif isinstance(query_geom, bytes):
+            srdd = cached.reader.query(key,
+                                       layer_name,
+                                       layer_zoom,
+                                       query_geom,
+                                       time_intervals,
+                                       query_proj,
+                                       numPartitions)
+        else:
+            raise TypeError("Could not query intersection", query_geom)
+
+        return TiledRasterLayer(pysc, rdd_type, srdd)
 
 def write(uri,
           layer_name,

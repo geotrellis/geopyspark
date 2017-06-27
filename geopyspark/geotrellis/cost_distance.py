@@ -2,10 +2,12 @@ import shapely.wkb
 from geopyspark.geotrellis.layer import TiledRasterLayer
 
 
-def cost_distance(tiled_raster_layer, geometries, max_distance):
+def cost_distance(friction_layer, geometries, max_distance):
     """Performs cost distance of a TileLayer.
 
     Args:
+        friction_layer(:class:`~geopyspark.geotrellis.rdd.TiledRasterLayer`):
+            Tiled raster of a friction surface to traverse.
         geometries (list):
             A list of shapely geometries to be used as a starting point.
 
@@ -19,7 +21,9 @@ def cost_distance(tiled_raster_layer, geometries, max_distance):
     """
 
     wkbs = [shapely.wkb.dumps(g) for g in geometries]
-    srdd = tiled_raster_layer.srdd.costDistance(tiled_raster_layer.pysc._jsc.sc(), wkbs,
-                                                float(max_distance))
+    srdd = friction_layer.srdd.costDistance(
+        friction_layer.pysc._jsc.sc(),
+        wkbs,
+        float(max_distance))
 
-    return TiledRasterLayer(tiled_raster_layer.pysc, tiled_raster_layer.rdd_type, srdd)
+    return TiledRasterLayer(friction_layer.pysc, friction_layer.rdd_type, srdd)

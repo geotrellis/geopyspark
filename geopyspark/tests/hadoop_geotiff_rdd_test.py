@@ -57,7 +57,7 @@ class Singleband(GeoTiffIOTest, BaseTestClass):
             result = get(BaseTestClass.pysc,
                          SPATIAL,
                          self.dir_path,
-                         maxTileSize=256)
+                         max_tile_size=256)
 
         return [tile[1] for tile in result.to_numpy_rdd().collect()]
 

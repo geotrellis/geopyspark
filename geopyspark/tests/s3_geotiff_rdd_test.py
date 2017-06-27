@@ -65,7 +65,8 @@ class Multiband(S3GeoTiffIOTest, BaseTestClass):
         result = get(BaseTestClass.pysc,
                      SPATIAL,
                      self.uri,
-                     opt)
+                     s3_client=opt['s3Client'],
+                     max_tile_size=opt.get('maxTileSize'))
 
         return [tile[1] for tile in result.to_numpy_rdd().collect()]
 
