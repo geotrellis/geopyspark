@@ -4,7 +4,6 @@ from shapely.geometry import box
 import warnings
 import functools
 
-
 def deprecated(func):
     """This is a decorator which can be used to mark functions
     as deprecated. It will result in a warning being emmitted
@@ -370,3 +369,5 @@ class Metadata(object):
 
 __all__ = ["catalog", "geotiff", "layer", "cost_distance", "hillshade", "euclidean_distance",
            "rasterize", "tms"]
+
+from . import converters
