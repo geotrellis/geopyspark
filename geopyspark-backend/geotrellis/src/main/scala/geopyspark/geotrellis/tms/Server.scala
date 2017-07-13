@@ -79,6 +79,13 @@ object TMSServer {
     new TMSServer(route)
   }
 
+  def serveS3CatalogCustom(bucket: String, root: String, catalog: String, display: TileRender): TMSServer = {
+    import geotrellis.spark.io.s3._
+    val reader = S3ValueReader(bucket, root)
+    val route = new ValueReaderRoute(reader, catalog, display)
+    new TMSServer(route)
+  }
+
   def serveRemoteTMSLayer(patternURL: String): TMSServer = {
     val route = new ExternalTMSServerRoute(patternURL)
     new TMSServer(route)
@@ -90,6 +97,15 @@ object TMSServer {
       zoom -> rdd.map{ case (key, mbtile) => key -> mbtile.band(band) }
     }
     val route = new SpatialRddRoute(level_map, new RenderFromCM(cm), AkkaSystem.system)
+    new TMSServer(route)
+  }
+
+  def serveSpatialRddCustom(levels: java.util.Map[Int, RDD[(SpatialKey, MultibandTile)]], display: TileRender, band: Int): TMSServer = {
+    import scala.collection.JavaConverters._
+    val level_map = levels.asScala.map { case (zoom, rdd) =>
+      zoom -> rdd.map{ case (key, mbtile) => key -> mbtile.band(band) }
+    }
+    val route = new SpatialRddRoute(level_map, display, AkkaSystem.system)
     new TMSServer(route)
   }
 }

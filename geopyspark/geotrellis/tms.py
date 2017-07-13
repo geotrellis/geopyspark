@@ -1,8 +1,9 @@
 import io
 import numpy as np
 
+from geopyspark.geotrellis.color import ColorMap
 from geopyspark.geotrellis.layer import Pyramid
-
+from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
 
 class TileRender(object):
     """A Python implementation of the Scala geopyspark.geotrellis.tms.TileRender
@@ -20,10 +21,14 @@ class TileRender(object):
         Returns:
             [TileRender]
         """
+        print("Created Python TileRender object")
         # render_function: numpyarry => Image
         self.render_function = render_function
 
-    def render(self, cells, cols, rows): # return `bytes`
+    def requiresEncoding(self):
+        return True
+
+    def renderEncoded(self, scala_array): # return `bytes`
         """A function to convert an array to an image.
 
         Args:
@@ -35,13 +40,15 @@ class TileRender(object):
         Returns:
             [bytes] representing an image
         """
+        # self.sc._gateway.jvm.System.out.println("Python renderer called!")
         try:
-            # tile = np.array(list(cells)) # turn tile to array with bands
-            print("Reshaping to {}x{} matrix".format(rows, cols))
-            tile = np.reshape(np.frombuffer(cells, dtype="uint8"), (1, rows, cols)) # turn tile to array with bands
-            print("Rendering tile")
-            image = self.render_function(tile)
-            print("Saving result")
+            tile = multibandtile_decoder(scala_array)
+            # self.sc._gateway.jvm.System.out.println("Received tile of type {}".format(str(type(tile))))
+            cells = tile.cells
+            bands, rows, cols = cells.shape
+            # self.sc._gateway.jvm.System.out.println("Rendering {}x{} tile ({} bands)".format(rows, cols, bands))
+            image = self.render_function(cells)
+            # self.sc._gateway.jvm.System.out.println("Saving result")
             bio = io.BytesIO()
             image.save(bio, 'PNG')
             return bio.getvalue()
@@ -49,7 +56,7 @@ class TileRender(object):
             from traceback import print_exc
             print_exc()
 
-    class Java(object):
+    class Java:
         implements = ["geopyspark.geotrellis.tms.TileRender"]
 
 class TMSServer(object):
@@ -57,26 +64,32 @@ class TMSServer(object):
         self.pysc = pysc
         self.server = server
         self.handshake = ''
-        self.pysc._gateway.start_callback_server()
+        pysc._gateway.start_callback_server()
 
     def set_handshake(self, handshake):
         self.server.set_handshake(handshake)
         self.handshake = handshake
 
     @classmethod
-    def s3_catalog_tms_server(cls, pysc, bucket, root, catalog, color_map):
+    def s3_catalog_tms_server(cls, pysc, bucket, root, catalog, display):
         """A function to create a TMS server for a catalog stored in an S3 bucket.
 
         Args:
             bucket (string): The name of the S3 bucket
             root (string): The key in the bucket containing the catalog
             catalog (string): The name of the catalog
-            color_map (ColorMap): A ColorMap to use in rendering the catalog tiles
+            display (ColorMap, TileRender): A ColorMap to use in rendering the catalog tiles
 
         Returns:
             [TMSServer]
         """
-        server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveS3Catalog(bucket, root, catalog, color_map.cmap)
+        if isinstance(display, ColorMap):
+            server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveS3Catalog(bucket, root, catalog, display.cmap)
+        elif isinstance(display, TileRender):
+            server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveS3CatalogCustom(bucket, root, catalog, display)
+        else:
+            raise ValueError("Must specify the display parameter as a ColorMap or TileRender object")
+
         return cls(pysc, server)
 
     @classmethod
@@ -97,9 +110,27 @@ class TMSServer(object):
         return cls(pysc, server)
 
     @classmethod
-    def rdd_tms_server(cls, pysc, pyramid, color_map):
+    def rdd_tms_server(cls, pysc, pyramid, display):
+        """Creates a TMS server for displaying a Pyramided RDD.
+
+        Args:
+            pysc (SparkContext): The current SparkContext
+            pyramid (Pyramid): The pyramided RDD
+            display (ColorMap, TileRender): A color map or TileRender object
+                that will be used for display.
+
+        Returns:
+            [TMSServer]
+        """
         if isinstance(pyramid, list):
             pyramid = Pyramid(pyramid)
         rdd_levels = {k: v.srdd.rdd() for k, v in pyramid.levels.items()}
-        server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRdd(rdd_levels, color_map.cmap, 0)
+
+        if isinstance(display, ColorMap):
+            server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRdd(rdd_levels, display.cmap, 0)
+        elif isinstance(display, TileRender):
+            server = pysc._gateway.jvm.geopyspark.geotrellis.tms.TMSServer.serveSpatialRddCustom(rdd_levels, display, 0)
+        else:
+            raise ValueError("Must specify the display parameter as a ColorMap or TileRender object")
+
         return cls(pysc, server)

@@ -62,7 +62,16 @@ class ValueReaderRoute(
         Future {
           val reader = layers.getOrElseUpdate(zoom, valueReader.reader[SpatialKey, Tile](LayerId(catalog, zoom)))
           val tile: Tile = reader(key)
-          val bytes: Array[Byte] = time(s"Rendering tile @ $key (zoom=$zoom)"){ rf.render(tile) }
+          val bytes: Array[Byte] = time(s"Rendering tile @ $key (zoom=$zoom)"){
+            if (rf.requiresEncoding()) {
+              // println("Encoding version")
+              rf.renderEncoded(geopyspark.geotrellis.PythonTranslator.toPython(MultibandTile(tile)))
+            } else {
+              // println("Non-encoding version")
+              rf.render(MultibandTile(tile)) 
+            }
+          }
+          // println(s"Got back $bytes from renderer")
           HttpEntity(`image/png`, bytes)
         }
       }
@@ -141,7 +150,13 @@ class RDDLookup(
                 promise success (results
                   .find{ case (rddKey, _) => rddKey == key } 
                   .map{ case (_, tile) => 
-                        HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`image/png`), rf.render(tile))) 
+                        val bytes: Array[Byte] =
+                          if (rf.requiresEncoding()) {
+                            rf.renderEncoded(geopyspark.geotrellis.PythonTranslator.toPython(MultibandTile(tile)))
+                          } else {
+                            rf.render(MultibandTile(tile)) 
+                          }
+                        HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`image/png`), bytes)) 
                       }
                 )
               }}
