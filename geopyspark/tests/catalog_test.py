@@ -4,7 +4,7 @@ import pytest
 
 from shapely.geometry import box
 
-from geopyspark.geotrellis import Extent, SpatialKey
+from geopyspark.geotrellis import Extent, SpatialKey, GlobalLayout
 from geopyspark.geotrellis.catalog import read, read_value, query, read_layer_metadata, get_layer_ids
 from geopyspark.geotrellis.constants import LayerType, LayoutScheme
 from geopyspark.geotrellis.geotiff import get
@@ -17,7 +17,8 @@ class CatalogTest(BaseTestClass):
 
     metadata = rdd.collect_metadata()
     laid_out = rdd.tile_to_layout(metadata)
-    reprojected = laid_out.reproject(target_crs="EPSG:3857", scheme=LayoutScheme.ZOOM)
+    gl = GlobalLayout(256, 11, 0.1)
+    reprojected = laid_out.reproject(target_crs="EPSG:3857", layout=gl)
     result = reprojected.pyramid(start_zoom=11, end_zoom=1)
 
     dir_path = geotiff_test_path("catalog/")

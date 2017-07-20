@@ -84,11 +84,11 @@ class SpatialTiledRasterRDD(
   }
 
   def reproject(
-    layout: Either[LayoutScheme, LayoutDefinition],
+    layout: LayoutDefinition,
     crs: CRS,
     options: Reproject.Options
   ): TiledRasterRDD[SpatialKey] = {
-    val (zoom, reprojected) = TileRDDReproject(rdd, crs, layout, options)
+    val (zoom, reprojected) = TileRDDReproject(rdd, crs, Right(layout), options)
     SpatialTiledRasterRDD(Some(zoom), reprojected)
   }
 

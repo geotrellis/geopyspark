@@ -100,31 +100,25 @@ abstract class TiledRasterRDD[K: SpatialComponent: JsonFormat: ClassTag] extends
     crs: String,
     resampleMethod: ResampleMethod
   ): TiledRasterRDD[K] = {
-    val layoutDefinition = Right(LayoutDefinition(extent.toExtent, layout.toTileLayout))
+    val layoutDefinition = LayoutDefinition(extent.toExtent, layout.toTileLayout)
 
     reproject(layoutDefinition, TileRDD.getCRS(crs).get, getReprojectOptions(resampleMethod))
   }
 
   def reproject(
-    scheme: String,
-    tileSize: Int,
-    resolutionThreshold: Double,
+    layoutType: LayoutType,
     crs: String,
     resampleMethod: ResampleMethod
   ): TiledRasterRDD[K] = {
-    val _crs = TileRDD.getCRS(crs).get
+    val convertedCRS = TileRDD.getCRS(crs).get
+    val layoutDefinition =
+      layoutType.layoutDefinition(convertedCRS, rdd.metadata.extent, rdd.metadata.cellSize)
 
-    val layoutScheme =
-      scheme match {
-        case FLOAT => FloatingLayoutScheme(tileSize)
-        case ZOOM => ZoomedLayoutScheme(_crs, tileSize, resolutionThreshold)
-      }
-
-    reproject(Left(layoutScheme), _crs, getReprojectOptions(resampleMethod))
+    reproject(layoutDefinition, convertedCRS, getReprojectOptions(resampleMethod))
   }
 
   protected def reproject(
-    layout: Either[LayoutScheme, LayoutDefinition],
+    layout: LayoutDefinition,
     crs: CRS,
     options: Reproject.Options
   ): TiledRasterRDD[K]

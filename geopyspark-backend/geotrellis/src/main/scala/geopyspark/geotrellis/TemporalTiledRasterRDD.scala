@@ -91,11 +91,11 @@ class TemporalTiledRasterRDD(
   }
 
   def reproject(
-    layout: Either[LayoutScheme, LayoutDefinition],
+    layout: LayoutDefinition,
     crs: CRS,
     options: Reproject.Options
   ): TiledRasterRDD[SpaceTimeKey] = {
-    val (zoom, reprojected) = TileRDDReproject(rdd, crs, layout, options)
+    val (zoom, reprojected) = TileRDDReproject(rdd, crs, Right(layout), options)
     TemporalTiledRasterRDD(Some(zoom), reprojected)
   }
 
