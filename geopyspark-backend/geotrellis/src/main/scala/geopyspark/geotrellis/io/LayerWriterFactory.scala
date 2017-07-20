@@ -70,7 +70,7 @@ abstract class LayerWriterWrapper {
 
   def writeSpatial(
     layerName: String,
-    spatialRDD: TiledRasterRDD[SpatialKey],
+    spatialRDD: TiledRasterLayer[SpatialKey],
     indexStrategy: String
   ): Unit = {
     val id = LayerId(layerName, spatialRDD.getZoom)
@@ -80,7 +80,7 @@ abstract class LayerWriterWrapper {
 
   def writeTemporal(
     layerName: String,
-    temporalRDD: TiledRasterRDD[SpaceTimeKey],
+    temporalRDD: TiledRasterLayer[SpaceTimeKey],
     timeString: String,
     indexStrategy: String
   ): Unit = {

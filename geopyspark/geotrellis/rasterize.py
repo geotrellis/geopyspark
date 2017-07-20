@@ -27,11 +27,11 @@ def rasterize(pysc, geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, op
         crs = str(crs)
 
     wkb_geoms = [shapely.wkb.dumps(g) for g in geoms]
-    srdd = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.rasterizeGeometry(pysc._jsc.sc(),
-                                                                                           wkb_geoms,
-                                                                                           crs,
-                                                                                           zoom, float(fill_value),
-                                                                                           CellType(cell_type).value,
-                                                                                           options,
-                                                                                           num_partitions)
+    srdd = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer.rasterizeGeometry(pysc._jsc.sc(),
+                                                                                             wkb_geoms,
+                                                                                             crs,
+                                                                                             zoom, float(fill_value),
+                                                                                             CellType(cell_type).value,
+                                                                                             options,
+                                                                                             num_partitions)
     return TiledRasterLayer(pysc, LayerType.SPATIAL, srdd)

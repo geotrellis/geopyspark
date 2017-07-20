@@ -40,7 +40,7 @@ abstract class LayerReaderWrapper {
     layerName: String,
     zoom: Int,
     numPartitions: Int
-  ): TiledRasterRDD[_]
+  ): TiledRasterLayer[_]
 
   def query(
     keyType: String,
@@ -50,7 +50,7 @@ abstract class LayerReaderWrapper {
     queryIntervalStrings: ArrayList[String],
     projQuery: String,
     numPartitions: Int
-  ): TiledRasterRDD[_]
+  ): TiledRasterLayer[_]
 }
 
 
@@ -78,26 +78,26 @@ abstract class FilteringLayerReaderWrapper()
     layerName: String,
     zoom: Int,
     numPartitions: Int
-  ): TiledRasterRDD[_] = {
+  ): TiledRasterLayer[_] = {
     val id = LayerId(layerName, zoom)
     val valueClass = getValueClass(id)
 
     (keyType, valueClass) match {
       case ("SpatialKey", "geotrellis.raster.Tile") => {
         val result = layerReader.read[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](id, numPartitions)
-        new SpatialTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(tileToMultiband[SpatialKey](result), result.metadata))
+        new SpatialTiledRasterLayer(Some(zoom), MultibandTileLayerRDD(tileToMultiband[SpatialKey](result), result.metadata))
       }
       case ("SpatialKey", "geotrellis.raster.MultibandTile") => {
         val result = layerReader.read[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](id, numPartitions)
-        new SpatialTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(result, result.metadata))
+        new SpatialTiledRasterLayer(Some(zoom), MultibandTileLayerRDD(result, result.metadata))
       }
       case ("SpaceTimeKey", "geotrellis.raster.Tile") => {
         val result = layerReader.read[SpaceTimeKey, Tile, TileLayerMetadata[SpaceTimeKey]](id, numPartitions)
-        new TemporalTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(tileToMultiband[SpaceTimeKey](result), result.metadata))
+        new TemporalTiledRasterLayer(Some(zoom), MultibandTileLayerRDD(tileToMultiband[SpaceTimeKey](result), result.metadata))
       }
       case ("SpaceTimeKey", "geotrellis.raster.MultibandTile") => {
         val result = layerReader.read[SpaceTimeKey, MultibandTile, TileLayerMetadata[SpaceTimeKey]](id, numPartitions)
-        new TemporalTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(result, result.metadata))
+        new TemporalTiledRasterLayer(Some(zoom), MultibandTileLayerRDD(result, result.metadata))
       }
     }
   }
@@ -139,10 +139,10 @@ abstract class FilteringLayerReaderWrapper()
     queryIntervalStrings: ArrayList[String],
     projQuery: String,
     numPartitions: Int
-  ): TiledRasterRDD[_] = {
+  ): TiledRasterLayer[_] = {
     val id = LayerId(layerName, zoom)
     val valueClass = getValueClass(id)
-    val queryCRS = TileRDD.getCRS(projQuery)
+    val queryCRS = TileLayer.getCRS(projQuery)
     val spatialQuery = WKB.read(queryGeometryBytes)
 
     (keyType, valueClass) match {
@@ -164,7 +164,7 @@ abstract class FilteringLayerReaderWrapper()
 
         val result = tileToMultiband[SpatialKey](query.result)
 
-        new SpatialTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(result, query.result.metadata))
+        new SpatialTiledRasterLayer(Some(zoom), MultibandTileLayerRDD(result, query.result.metadata))
       }
 
       case ("SpatialKey", "geotrellis.raster.MultibandTile") => {
@@ -179,7 +179,7 @@ abstract class FilteringLayerReaderWrapper()
 
           case _ => layer
         }
-        new SpatialTiledRasterRDD(Some(zoom), query.result)
+        new SpatialTiledRasterLayer(Some(zoom), query.result)
       }
 
       case ("SpaceTimeKey", "geotrellis.raster.Tile") => {
@@ -202,7 +202,7 @@ abstract class FilteringLayerReaderWrapper()
         }
         val result = tileToMultiband[SpaceTimeKey](query2.result)
 
-        new TemporalTiledRasterRDD(Some(zoom), MultibandTileLayerRDD(result, query2.result.metadata))
+        new TemporalTiledRasterLayer(Some(zoom), MultibandTileLayerRDD(result, query2.result.metadata))
       }
 
       case ("SpaceTimeKey", "geotrellis.raster.MultibandTile") => {
@@ -223,7 +223,7 @@ abstract class FilteringLayerReaderWrapper()
           case Some(q) => query1.where(q)
           case None => query1
         }
-        new TemporalTiledRasterRDD(Some(zoom), query2.result)
+        new TemporalTiledRasterLayer(Some(zoom), query2.result)
       }
     }
   }

@@ -86,7 +86,7 @@ object GeoTiffRDD {
     keyType: String,
     paths: java.util.List[String],
     options: java.util.Map[String, Any]
-  ): RasterRDD[_] = {
+  ): RasterLayer[_] = {
     val uris = paths.map{ path => new URI(path) }
 
     uris
@@ -107,9 +107,9 @@ object GeoTiffRDD {
       .reduce{ (r1, r2) =>
         keyType match {
           case PROJECTEDEXTENT =>
-            ProjectedRasterRDD(r1.asInstanceOf[ProjectedRasterRDD].rdd.union(r2.asInstanceOf[ProjectedRasterRDD].rdd))
+            ProjectedRasterLayer(r1.asInstanceOf[ProjectedRasterLayer].rdd.union(r2.asInstanceOf[ProjectedRasterLayer].rdd))
           case TEMPORALPROJECTEDEXTENT =>
-            TemporalRasterRDD(r1.asInstanceOf[TemporalRasterRDD].rdd.union(r2.asInstanceOf[TemporalRasterRDD].rdd))
+            TemporalRasterLayer(r1.asInstanceOf[TemporalRasterLayer].rdd.union(r2.asInstanceOf[TemporalRasterLayer].rdd))
         }
       }
   }
@@ -119,12 +119,12 @@ object GeoTiffRDD {
     keyType: String,
     path: Path,
     options: HadoopGeoTiffRDD.Options
-  ): RasterRDD[_] =
+  ): RasterLayer[_] =
     keyType match {
       case PROJECTEDEXTENT =>
-        ProjectedRasterRDD(HadoopGeoTiffRDD.spatialMultiband(path, options)(sc))
+        ProjectedRasterLayer(HadoopGeoTiffRDD.spatialMultiband(path, options)(sc))
       case TEMPORALPROJECTEDEXTENT =>
-        TemporalRasterRDD(HadoopGeoTiffRDD.temporalMultiband(path, options)(sc))
+        TemporalRasterLayer(HadoopGeoTiffRDD.temporalMultiband(path, options)(sc))
     }
 
   private def getS3GeoTiffRDD(
@@ -132,11 +132,11 @@ object GeoTiffRDD {
     keyType: String,
     uri: URI,
     options: S3GeoTiffRDD.Options
-  ): RasterRDD[_] =
+  ): RasterLayer[_] =
     keyType match {
       case PROJECTEDEXTENT =>
-        ProjectedRasterRDD(S3GeoTiffRDD.spatialMultiband(uri.getHost, uri.getPath.tail, options)(sc))
+        ProjectedRasterLayer(S3GeoTiffRDD.spatialMultiband(uri.getHost, uri.getPath.tail, options)(sc))
       case TEMPORALPROJECTEDEXTENT =>
-        TemporalRasterRDD(S3GeoTiffRDD.temporalMultiband(uri.getHost, uri.getPath.tail, options)(sc))
+        TemporalRasterLayer(S3GeoTiffRDD.temporalMultiband(uri.getHost, uri.getPath.tail, options)(sc))
     }
 }

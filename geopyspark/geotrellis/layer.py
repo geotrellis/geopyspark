@@ -228,11 +228,11 @@ class RasterLayer(CachableLayer):
 
         if layer_type == LayerType.SPATIAL:
             srdd = \
-                    pysc._gateway.jvm.geopyspark.geotrellis.ProjectedRasterRDD.fromProtoEncodedRDD(
+                    pysc._gateway.jvm.geopyspark.geotrellis.ProjectedRasterLayer.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd)
         else:
             srdd = \
-                    pysc._gateway.jvm.geopyspark.geotrellis.TemporalRasterRDD.fromProtoEncodedRDD(
+                    pysc._gateway.jvm.geopyspark.geotrellis.TemporalRasterLayer.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd)
 
         return cls(pysc, layer_type, srdd)
@@ -384,7 +384,7 @@ class RasterLayer(CachableLayer):
 
         Note:
             This operation first needs to deserialize the wrapped ``RDD`` into Python and then
-            serialize the ``RDD`` back into a ``RasterRDD`` once the mapping is done. Thus,
+            serialize the ``RDD`` back into a ``RasterLayer`` once the mapping is done. Thus,
             it is advised to chain together operations to reduce performance cost.
 
         Args:
@@ -405,7 +405,7 @@ class RasterLayer(CachableLayer):
 
         Note:
             This operation first needs to deserialize the wrapped ``RDD`` into Python and then
-            serialize the ``RDD`` back into a ``TiledRasterRDD`` once the mapping is done. Thus,
+            serialize the ``RDD`` back into a ``TiledRasterLayer`` once the mapping is done. Thus,
             it is advised to chain together operations to reduce performance cost.
 
         Args:
@@ -684,11 +684,11 @@ class TiledRasterLayer(CachableLayer):
 
         if layer_type == LayerType.SPATIAL:
             srdd = \
-                    pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterRDD.fromProtoEncodedRDD(
+                    pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd, json.dumps(metadata))
         else:
             srdd = \
-                    pysc._gateway.jvm.geopyspark.geotrellis.TemporalTiledRasterRDD.fromProtoEncodedRDD(
+                    pysc._gateway.jvm.geopyspark.geotrellis.TemporalTiledRasterLayer.fromProtoEncodedRDD(
                         reserialized_rdd._jrdd, json.dumps(metadata))
 
         return cls(pysc, layer_type, srdd)
@@ -763,7 +763,7 @@ class TiledRasterLayer(CachableLayer):
 
         Note:
             This operation first needs to deserialize the wrapped ``RDD`` into Python and then
-            serialize the ``RDD`` back into a ``TiledRasterRDD`` once the mapping is done. Thus,
+            serialize the ``RDD`` back into a ``TiledRasterLayer`` once the mapping is done. Thus,
             it is advised to chain together operations to reduce performance cost.
 
         Args:
@@ -785,7 +785,7 @@ class TiledRasterLayer(CachableLayer):
 
         Note:
             This operation first needs to deserialize the wrapped ``RDD`` into Python and then
-            serialize the ``RDD`` back into a ``TiledRasterRDD`` once the mapping is done. Thus,
+            serialize the ``RDD`` back into a ``TiledRasterLayer`` once the mapping is done. Thus,
             it is advised to chain together operations to reduce performance cost.
 
         Args:

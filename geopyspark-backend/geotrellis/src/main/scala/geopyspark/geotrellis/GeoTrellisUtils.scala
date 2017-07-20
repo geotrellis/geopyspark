@@ -39,7 +39,7 @@ object GeoTrellisUtils {
   def getReprojectOptions(resampleMethod: String): Reproject.Options = {
     import Reproject.Options
 
-    val method = TileRDD.getResampleMethod(resampleMethod)
+    val method = TileLayer.getResampleMethod(resampleMethod)
 
     Options(geotrellis.raster.reproject.Reproject.Options(method=method))
   }
