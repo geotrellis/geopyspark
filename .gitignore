@@ -103,3 +103,9 @@ geopyspark/jars/*.jar
 # Unit test performance results
 prof/
 .ensime_cache
+
+# Emacs
+.ensime
+\#*#
+*~
+.#*

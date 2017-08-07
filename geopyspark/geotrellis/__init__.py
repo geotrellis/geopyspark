@@ -12,7 +12,6 @@ from geopyspark.geotrellis.constants import CellType, NO_DATA_INT
 
 _EPOCH = datetime.datetime.utcfromtimestamp(0)
 
-
 def _convert_to_unix_time(date_time):
     return int((date_time - _EPOCH).total_seconds() * 1000)
 
@@ -493,8 +492,6 @@ class Metadata(object):
         Returns:
             :class:`~geopyspark.geotrellis.Metadata`
         """
-
-        cls._metadata_dict = metadata_dict
 
         crs = metadata_dict['crs']
         cell_type = metadata_dict['cellType']

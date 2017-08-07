@@ -4,6 +4,7 @@ classes are wrappers of their Scala counterparts. These will be used in leau of 
 when performing operations.
 '''
 import json
+import datetime
 import shapely.wkb
 from shapely.geometry import Polygon, MultiPolygon
 from geopyspark.geotrellis.protobufcodecs import multibandtile_decoder
@@ -1148,7 +1149,7 @@ class TiledRasterLayer(CachableLayer):
             geometries = [geometries]
         wkbs = [shapely.wkb.dumps(g) for g in geometries]
 
-        return [(t._1(), t._2()) for t in list(fn(wkbs))]
+        return [(datetime.datetime.utcfromtimestamp(t._1() / 1000), t._2()) for t in list(fn(wkbs))]
 
     def histogram_series(self, geometries):
         fn = self.srdd.histogramSeries

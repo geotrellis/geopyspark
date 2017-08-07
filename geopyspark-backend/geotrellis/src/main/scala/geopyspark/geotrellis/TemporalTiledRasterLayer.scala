@@ -111,56 +111,61 @@ class TemporalTiledRasterLayer(
 
   def sumSeries(
     wkbs: java.util.ArrayList[Array[Byte]]
-  ): Array[(ZonedDateTime, Double)] = {
+  ): Array[(Long, Double)] = {
     val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
     val metadata = rdd.metadata
     ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
       .sumSeries(polygon)
       .toArray
+      .map { case (dt, v) => (dt.toInstant.toEpochMilli, v) }
       .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
   def minSeries(
     wkbs: java.util.ArrayList[Array[Byte]]
-  ): Array[(ZonedDateTime, Double)] = {
+  ): Array[(Long, Double)] = {
     val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
     val metadata = rdd.metadata
     ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
       .minSeries(polygon)
       .toArray
+      .map { case (dt, v) => (dt.toInstant.toEpochMilli, v) }
       .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
   def maxSeries(
     wkbs: java.util.ArrayList[Array[Byte]]
-  ): Array[(ZonedDateTime, Double)] = {
+  ): Array[(Long, Double)] = {
     val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
     val metadata = rdd.metadata
     ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
       .maxSeries(polygon)
       .toArray
+      .map { case (dt, v) => (dt.toInstant.toEpochMilli, v) }
       .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
   def meanSeries(
     wkbs: java.util.ArrayList[Array[Byte]]
-  ): Array[(ZonedDateTime, Double)] = {
+  ): Array[(Long, Double)] = {
     val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
     val metadata = rdd.metadata
     ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
       .meanSeries(polygon)
       .toArray
+      .map { case (dt, v) => (dt.toInstant.toEpochMilli, v) }
       .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
   def histogramSeries(
     wkbs: java.util.ArrayList[Array[Byte]]
-  ): Array[(ZonedDateTime, Histogram[Double])] = {
+  ): Array[(Long, Histogram[Double])] = {
     val polygon: MultiPolygon = wkbsToMultiPolygon(wkbs)
     val metadata = rdd.metadata
     ContextRDD(rdd.mapValues({ m => m.bands(0) }), metadata)
       .histogramSeries(polygon)
       .toArray
+      .map { case (dt, v) => (dt.toInstant.toEpochMilli, v) }
       .sortWith({ (t1, t2) => (t1._1.compareTo(t2._1) <= 0) })
   }
 
