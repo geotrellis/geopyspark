@@ -130,6 +130,14 @@ a need for it.
   contributing
 
 .. toctree::
+  :maxdepth: 3
+  :caption: Note Book Guides
+  :glob:
+  :hidden:
+
+  demo-notebooks/core-concepts
+
+.. toctree::
   :maxdepth: 4
   :caption: User Guides
   :glob:
