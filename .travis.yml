@@ -40,6 +40,7 @@ install:
   - pip3 install -r requirements.txt
   - pip3 install pyproj
   - pip3 install pylint
+  - pip3 install jupyter
   - if [[ $TRAVIS_PYTHON_VERSION == "3.3" ]]; then
     pip3 install pathlib;
     fi
@@ -56,7 +57,7 @@ cache:
   - $HOME/.cache/pip
 
 script:
-  - export SPARK_HOME=./spark-2.1.1-bin-hadoop2.7/
+  - export SPARK_HOME=/home/travis/build/locationtech-labs/geopyspark/spark-2.1.1-bin-hadoop2.7/
   - export JAVA_HOME=/usr/lib/jvm/java-8-oracle
   - ./test_script.sh
   - pylint geopyspark

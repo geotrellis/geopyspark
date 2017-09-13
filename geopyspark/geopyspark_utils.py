@@ -31,4 +31,4 @@ def add_pyspark_path():
         py4j_zip = glob.glob(path.join(pyspark_home, 'python', 'lib', 'py4j-*-src.zip'))
         sys.path.append(py4j_zip[0])
     except:
-        raise ValueError("Could not find the py4j zip in", path.join(pyspark_home, 'python', 'lib'))
+        raise ValueError("Could not find the py4j zip in", path.join(pyspark_home, 'python', 'lib'), os.getcwd())
