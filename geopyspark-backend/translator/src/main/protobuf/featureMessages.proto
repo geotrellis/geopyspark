@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package protos;
+
+message ProtoFeature {
+  repeated bytes geom = 1;
+  ProtoMetadata metadata = 2;
+}
+
+message ProtoMetadata {
+  int64 changeset = 1;
+  fixed64 id = 2;
+  int64 minorVersion = 3;
+  ProtoTags tags = 4;
+  int64 timestamp = 5;
+  int64 uid = 6;
+  int64 version = 7;
+  bool visible = 8;
+}
+
+message ProtoTags {
+  repeated ProtoTag tag = 1;
+}
+
+message ProtoTag {
+  string key = 1;
+  string value = 2;
+}

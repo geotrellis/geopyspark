@@ -65,7 +65,7 @@ object TMSServerRoutes {
             .retrieve(zoom, x, y)
             .map(_.map{tile =>
               if (renderer.requiresEncoding()) {
-                renderer.renderEncoded(geopyspark.geotrellis.PythonTranslator.toPython(tile))
+                renderer.renderEncoded(geopyspark.translator.PythonTranslator.toPython(tile))
               } else {
                 renderer.render(tile)
               }
@@ -90,7 +90,7 @@ object TMSServerRoutes {
             .map(
               _.map(array =>
                 if (compositer.requiresEncoding()) {
-                  compositer.compositeEncoded(array.map{tile => geopyspark.geotrellis.PythonTranslator.toPython(tile)})
+                  compositer.compositeEncoded(array.map{tile => geopyspark.translator.PythonTranslator.toPython(tile)})
                 } else {
                   compositer.composite(array)
                 }

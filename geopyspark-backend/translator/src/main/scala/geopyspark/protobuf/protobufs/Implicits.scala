@@ -1,4 +1,4 @@
-package geopyspark.geotrellis.protobufs
+package geopyspark.translator.protobufs
 
 
 object Implicits extends Implicits

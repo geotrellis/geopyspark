@@ -1,6 +1,6 @@
-package geopyspark.geotrellis.protobufs
+package geopyspark.translator.protobufs
 
-import geopyspark.geotrellis.ProtoBufCodec
+import geopyspark.translator.ProtoBufCodec
 import geotrellis.vector._
 import protos.extentMessages._
 

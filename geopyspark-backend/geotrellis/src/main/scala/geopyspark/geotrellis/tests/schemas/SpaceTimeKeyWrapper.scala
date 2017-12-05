@@ -1,5 +1,6 @@
 package geopyspark.geotrellis.tests.schemas
 
+import geopyspark.translator.PythonTranslator
 import geopyspark.geotrellis._
 import protos.keyMessages._
 import geopyspark.geotrellis.testkit._

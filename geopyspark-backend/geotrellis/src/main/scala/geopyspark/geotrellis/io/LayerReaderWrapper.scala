@@ -3,7 +3,6 @@ package geopyspark.geotrellis.io
 import geopyspark.geotrellis._
 
 import geotrellis.vector._
-import geotrellis.vector.io.wkt.WKT
 import geotrellis.vector.io.wkb.WKB
 import geotrellis.raster._
 import geotrellis.proj4._
@@ -27,8 +26,6 @@ import java.time.ZonedDateTime
 import java.util.ArrayList
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-
-import geopyspark.geotrellis.PythonTranslator
 
 
 class LayerReaderWrapper(sc: SparkContext) {

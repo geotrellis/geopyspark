@@ -3,8 +3,8 @@ package geopyspark.geotrellis
 import geopyspark.geotrellis._
 import geopyspark.geotrellis.GeoTrellisUtils._
 
-import protos.tileMessages._
-import protos.tupleMessages._
+//import protos.tileMessages._
+//import protos.tupleMessages._
 
 import geotrellis.proj4._
 import geotrellis.raster._

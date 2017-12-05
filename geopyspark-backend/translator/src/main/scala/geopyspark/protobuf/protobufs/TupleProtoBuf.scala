@@ -1,7 +1,7 @@
-package geopyspark.geotrellis.protobufs
+package geopyspark.translator.protobufs
 
-import geopyspark.geotrellis.ProtoBufCodec
-import geopyspark.geotrellis.protobufs.Implicits._
+import geopyspark.translator.ProtoBufCodec
+import geopyspark.translator.protobufs.Implicits._
 import protos.extentMessages._
 import protos.tileMessages._
 import protos.keyMessages._
