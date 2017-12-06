@@ -22,7 +22,7 @@ def __dataset_to_proj4(dataset):
     return proj4
 
 
-def __get_metadata(uri, dataset_to_proj4, xcols, ycols):
+def __get_metadata(uri, dataset_to_proj4, xcols, ycols, band):
 
     # Potentially on worker
     if ("GDAL_DATA" not in os.environ) and (__GDAL_DATA != None):
@@ -43,6 +43,7 @@ def __get_metadata(uri, dataset_to_proj4, xcols, ycols):
             new_line['window'] = w
             new_line['projected_extent'] = gps.ProjectedExtent(extent=extent, proj4=proj4)
             new_line['nodata'] = nodata
+            new_line['band'] = band
             yield new_line
 
     try:
@@ -66,15 +67,19 @@ def __get_data(metadatum):
     new_metadatum = metadatum.copy()
 
     with rasterio.open(metadatum['uri']) as dataset:
-        new_metadatum['data'] = dataset.read(1, window=metadatum['window'])
+        band = new_metadatum['band']
+        new_metadatum['data'] = dataset.read(band, window=metadatum['window'])
         new_metadatum.pop('window')
         new_metadatum.pop('uri')
+        new_metadatum.pop('band')
 
     return new_metadatum
 
 
-def uri_to_pretiles(uri, dataset_to_proj4=__dataset_to_proj4, xcols=512, ycols=512):
-    metadata = __get_metadata(uri, dataset_to_proj4, xcols, ycols)
+def uri_to_pretiles(uri, dataset_to_proj4=__dataset_to_proj4, xcols=512, ycols=512, bands=[1]):
+    metadata = []
+    for band in bands:
+        metadata = metadata + __get_metadata(uri, dataset_to_proj4, xcols, ycols, band)
     return [__get_data(metadatum) for metadatum in metadata]
 
 
