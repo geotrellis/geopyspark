@@ -28,7 +28,7 @@ def __get_metadata(uri, dataset_to_proj4, xcols, ycols):
     if ("GDAL_DATA" not in os.environ) and (__GDAL_DATA != None):
         os.environ["GDAL_DATA"] = __GDAL_DATA
 
-    def windows(ws, uri, proj4):
+    def windows(ws, uri, proj4, nodata):
         for w in ws:
             ((row_start, row_stop), (col_start, col_stop)) = w
 
@@ -42,6 +42,7 @@ def __get_metadata(uri, dataset_to_proj4, xcols, ycols):
             new_line['uri'] = uri
             new_line['window'] = w
             new_line['projected_extent'] = gps.ProjectedExtent(extent=extent, proj4=proj4)
+            new_line['nodata'] = nodata
             yield new_line
 
     try:
@@ -50,10 +51,11 @@ def __get_metadata(uri, dataset_to_proj4, xcols, ycols):
             height = dataset.height
             width = dataset.width
             proj4 = dataset_to_proj4(dataset)
+            nodata = dataset.nodata
             tile_cols = (int)(math.ceil(width/xcols)) * xcols
             tile_rows = (int)(math.ceil(height/ycols)) * ycols
             ws = [((x, min(width-1, x + xcols)), (y, min(height-1, y + ycols))) for x in range(0, tile_cols, xcols) for y in range(0, tile_rows, ycols)]
-            metadata = [i for i in windows(ws, uri, proj4)]
+            metadata = [i for i in windows(ws, uri, proj4, nodata)]
     except:
         metadata = []
 
@@ -71,17 +73,21 @@ def __get_data(metadatum):
     return new_metadatum
 
 
-def uri_to_pretiles(uri, dataset_to_proj4, xcols=512, ycols=512):
+def uri_to_pretiles(uri, dataset_to_proj4=__dataset_to_proj4, xcols=512, ycols=512):
     metadata = __get_metadata(uri, dataset_to_proj4, xcols, ycols)
     return [__get_data(metadatum) for metadatum in metadata]
 
 
-def pretile_to_tile(pretile, no_data_value=0):
+def pretile_to_tile(pretile, no_data_arg=None):
     if isinstance(pretile, tuple):
         projected_extent = pretile[0]
         array = np.array([l['data'] for l in pretile[1]])
+        nodata = pretile[1][0]['nodata']
     elif isinstance(pretile, dict):
         projected_extent = pretile['projected_extent']
         array = np.array([pretile['data']])
-    tile = gps.Tile.from_numpy_array(array, no_data_value=no_data_value)
+        nodata = pretile['nodata']
+    if not no_data_arg == None:
+        nodata = no_data_arg
+    tile = gps.Tile.from_numpy_array(array, no_data_value=nodata)
     return (projected_extent, tile)
