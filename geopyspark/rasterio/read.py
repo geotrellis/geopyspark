@@ -12,7 +12,7 @@ else:
     __GDAL_DATA = None
 
 
-def __dataset_to_proj4(dataset):
+def dataset_to_proj4(dataset):
     from osgeo import osr
 
     crs = dataset.get_crs()
@@ -76,7 +76,20 @@ def __get_data(metadatum):
     return new_metadatum
 
 
-def uri_to_pretiles(uri, dataset_to_proj4=__dataset_to_proj4, xcols=512, ycols=512, bands=[1]):
+def uri_to_pretiles(uri, dataset_to_proj4=dataset_to_proj4, xcols=512, ycols=512, bands=[1]):
+    """Given a URI, this method uses rasterio to generate series of tiles of the desired dimensions.
+
+    Args:
+        uri: The URI where the source data can be found.
+        dataset_to_proj4: A that takes a rasterio.DatasetReader and returns a Proj4 string.
+        xcols: The desired tile width.
+        ycols: The desired tile height.
+        bands: The bands from which tiles should be produced.  An array of integers.
+
+    Returns:
+        An array of dictionaries.  The tile can be found in a numpy array under the key ``data``.
+    """
+
     metadata = []
     for band in bands:
         metadata = metadata + __get_metadata(uri, dataset_to_proj4, xcols, ycols, band)
@@ -84,6 +97,18 @@ def uri_to_pretiles(uri, dataset_to_proj4=__dataset_to_proj4, xcols=512, ycols=5
 
 
 def pretile_to_tile(pretile, no_data_arg=None):
+    """Given a pretile (as produced by ``uri_to_pretiles``), produce a projected extent and a tile.
+
+    Args:
+        pretile: A pretile as produced by ``uri_to_pretiles``.
+        no_data_arg: The nodata value to use.  If equal to None or not
+            specified, a nodata value will taken from the dataset using
+            rasterio.
+
+    Returns:
+        A tuple containing a projected extent and a tile.
+    """
+
     if isinstance(pretile, tuple):
         projected_extent = pretile[0]
         array = np.array([l['data'] for l in pretile[1]])
@@ -92,7 +117,7 @@ def pretile_to_tile(pretile, no_data_arg=None):
         projected_extent = pretile['projected_extent']
         array = np.array([pretile['data']])
         nodata = pretile['nodata']
-    if not no_data_arg == None:
+    if not (no_data_arg is None):
         nodata = no_data_arg
     tile = gps.Tile.from_numpy_array(array, no_data_value=nodata)
     return (projected_extent, tile)
