@@ -23,8 +23,6 @@ import org.apache.spark.rdd.RDD
 
 import java.time.ZonedDateTime
 
-import geopyspark.geotrellis.PythonTranslator
-
 
 /**
   * Base wrapper class for all backends that provide a

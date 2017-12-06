@@ -24,6 +24,8 @@ setup_args = dict(
         'geopyspark',
         'geopyspark.geotrellis',
         'geopyspark.geotrellis.protobuf',
+        'geopyspark.vector_pipe',
+        'geopyspark.vector_pipe.protobuf',
         'geopyspark.command',
         'geopyspark.tests',
         'geopyspark.tests.schema_tests',

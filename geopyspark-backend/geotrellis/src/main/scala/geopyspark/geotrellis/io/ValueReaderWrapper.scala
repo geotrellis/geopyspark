@@ -24,7 +24,7 @@ import java.util.ArrayList
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import geopyspark.geotrellis.PythonTranslator
+import geopyspark.util.PythonTranslator
 
 
 /**
