@@ -1,6 +1,6 @@
 package geopyspark.geotrellis.protobufs
 
-import geopyspark.geotrellis.ProtoBufCodec
+import geopyspark.util.ProtoBufCodec
 import protos.tileMessages._
 import geotrellis.raster._
 

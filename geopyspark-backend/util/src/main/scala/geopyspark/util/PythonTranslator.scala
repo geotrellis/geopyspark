@@ -1,4 +1,4 @@
-package geopyspark.geotrellis
+package geopyspark.util
 
 import geotrellis.raster._
 
