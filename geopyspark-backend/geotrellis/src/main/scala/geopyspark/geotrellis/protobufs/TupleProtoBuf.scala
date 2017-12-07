@@ -1,6 +1,6 @@
 package geopyspark.geotrellis.protobufs
 
-import geopyspark.geotrellis.ProtoBufCodec
+import geopyspark.util.ProtoBufCodec
 import geopyspark.geotrellis.protobufs.Implicits._
 import protos.extentMessages._
 import protos.tileMessages._

@@ -4,6 +4,7 @@ import protos.tileMessages._
 import protos.extentMessages._
 import protos.tupleMessages._
 
+import geopyspark.util._
 import geopyspark.geotrellis._
 import geopyspark.geotrellis.testkit._
 

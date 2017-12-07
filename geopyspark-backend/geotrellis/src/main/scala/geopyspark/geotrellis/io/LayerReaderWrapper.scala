@@ -28,8 +28,6 @@ import java.util.ArrayList
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import geopyspark.geotrellis.PythonTranslator
-
 
 class LayerReaderWrapper(sc: SparkContext) {
 
