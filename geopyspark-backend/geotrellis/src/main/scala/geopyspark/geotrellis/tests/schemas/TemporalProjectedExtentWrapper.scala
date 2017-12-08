@@ -1,5 +1,6 @@
 package geopyspark.geotrellis.tests.schemas
 
+import geopyspark.util._
 import geopyspark.geotrellis._
 import protos.extentMessages._
 import geopyspark.geotrellis.testkit._

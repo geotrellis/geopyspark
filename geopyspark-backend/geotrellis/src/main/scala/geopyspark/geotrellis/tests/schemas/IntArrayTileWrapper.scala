@@ -1,6 +1,7 @@
 package geopyspark.geotrellis.tests.schemas
 
 import protos.tileMessages._
+import geopyspark.util._
 import geopyspark.geotrellis._
 import geopyspark.geotrellis.testkit._
 import geotrellis.raster._

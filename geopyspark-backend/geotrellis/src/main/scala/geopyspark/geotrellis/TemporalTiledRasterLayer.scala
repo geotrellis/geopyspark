@@ -1,5 +1,6 @@
 package geopyspark.geotrellis
 
+import geopyspark.util._
 import geopyspark.geotrellis._
 import geopyspark.geotrellis.GeoTrellisUtils._
 

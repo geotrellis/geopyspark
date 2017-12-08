@@ -1,11 +1,14 @@
 package geopyspark.geotrellis
 
+import geopyspark.util._
 import geopyspark.geotrellis._
 import geopyspark.geotrellis.GeoTrellisUtils._
+import geopyspark.vectorpipe._
 
 import protos.tileMessages._
 import protos.keyMessages._
 import protos.tupleMessages._
+import protos.featureMessages._
 
 import geotrellis.proj4._
 import geotrellis.raster._
@@ -491,6 +494,47 @@ object SpatialTiledRasterLayer {
       options = Option(options).getOrElse(Options.DEFAULT),
       partitioner = partitioner)
     val metadata = TileLayerMetadata(cellType, ld, maptrans(gb), srcCRS, KeyBounds(gb))
+    SpatialTiledRasterLayer(Some(requestedZoom),
+      MultibandTileLayerRDD(tiles.mapValues(MultibandTile(_)), metadata))
+  }
+
+  def rasterizeFeaturesWithZIndex(
+    featureRDD: RDD[Array[Byte]],
+    geomCRS: String,
+    requestedZoom: Int,
+    requestedCellType: String,
+    options: Rasterizer.Options,
+    numPartitions: Integer,
+    zIndexCellType: String
+  ): SpatialTiledRasterLayer = {
+    import geotrellis.raster.rasterize.Rasterizer.Options
+
+    val scalaRDD =
+      PythonTranslator.fromPython[Feature[Geometry, CellValue], ProtoFeatureCellValue](featureRDD, ProtoFeatureCellValue.parseFrom)
+
+    val fullEnvelope = scalaRDD.map(_.geom.envelope).reduce(_ combine _)
+
+    val cellType = CellType.fromName(requestedCellType)
+    val zCellType = CellType.fromName(zIndexCellType)
+
+    val srcCRS = TileLayer.getCRS(geomCRS).get
+    val LayoutLevel(z, ld) = ZoomedLayoutScheme(srcCRS).levelForZoom(requestedZoom)
+    val maptrans = ld.mapTransform
+    val gb @ GridBounds(cmin, rmin, cmax, rmax) = maptrans(fullEnvelope)
+    val partitioner = new HashPartitioner(Option(numPartitions).map(_.toInt).getOrElse(math.max(gb.size / 512, 1)))
+
+    val tiles =
+      RasterizeRDD.fromFeatureWithZIndex(
+        features = scalaRDD,
+        cellType = cellType,
+        layout = ld,
+        options = Option(options).getOrElse(Options.DEFAULT),
+        partitioner = partitioner,
+        zIndexCellType = zCellType
+      )
+
+    val metadata = TileLayerMetadata(cellType, ld, maptrans(gb), srcCRS, KeyBounds(gb))
+
     SpatialTiledRasterLayer(Some(requestedZoom),
       MultibandTileLayerRDD(tiles.mapValues(MultibandTile(_)), metadata))
   }
