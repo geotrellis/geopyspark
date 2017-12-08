@@ -1,5 +1,7 @@
 package geopyspark.geotrellis
 
+import geopyspark.util._
+
 import geotrellis.proj4._
 import geotrellis.raster._
 import geotrellis.raster.io.geotiff.{GeoTiffOptions, MultibandGeoTiff, Tags}

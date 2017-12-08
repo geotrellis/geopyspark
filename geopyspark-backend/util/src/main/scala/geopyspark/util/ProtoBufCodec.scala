@@ -1,4 +1,4 @@
-package geopyspark.geotrellis
+package geopyspark.util
 
 import com.trueaccord.scalapb.GeneratedMessage
 

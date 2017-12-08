@@ -2,9 +2,13 @@ from shapely.wkb import dumps
 from geopyspark import get_spark_context
 from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.geotrellis.layer import TiledRasterLayer
+from geopyspark.geotrellis.protobufserializer import ProtoBufSerializer
+
+from geopyspark.vector_pipe.vector_pipe_protobufcodecs import (feature_cellvalue_decoder,
+                                                               feature_cellvalue_encoder)
 
 
-__all__ = ['rasterize']
+__all__ = ['rasterize', 'rasterize_features']
 
 
 def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=None, num_partitions=None):
@@ -58,5 +62,33 @@ def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=
                           CellType(cell_type).value,
                           options,
                           num_partitions)
+
+    return TiledRasterLayer(LayerType.SPATIAL, srdd)
+
+
+def rasterize_features(features,
+                       crs,
+                       zoom,
+                       cell_type=CellType.FLOAT64,
+                       options=None,
+                       num_partitions=None,
+                       zindex_cell_type=CellType.INT8):
+
+    if isinstance(crs, int):
+        crs = str(crs)
+
+    pysc = get_spark_context()
+    rasterizer = pysc._gateway.jvm.geopyspark.geotrellis.SpatialTiledRasterLayer.rasterizeFeaturesWithZIndex
+
+    ser = ProtoBufSerializer(feature_cellvalue_decoder, feature_cellvalue_encoder)
+    reserialized_rdd = features._reserialize(ser)
+
+    srdd = rasterizer(reserialized_rdd._jrdd.rdd(),
+                      crs,
+                      zoom,
+                      CellType(cell_type).value,
+                      options,
+                      num_partitions,
+                      CellType(zindex_cell_type).value)
 
     return TiledRasterLayer(LayerType.SPATIAL, srdd)
