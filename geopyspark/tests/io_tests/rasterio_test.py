@@ -26,7 +26,7 @@ class CatalogTest(BaseTestClass):
         self.assertEqual(len(tiles), 144)
 
     def test_layer(self):
-        to_pretiles = lambda uri: grr.uri_to_pretiles(uri, lambda n: '+proj=longlat +datum=WGS84 +no_defs ')
+        to_pretiles = lambda uri: grr.uri_to_pretiles(uri)
         rdd0 = BaseTestClass.pysc.parallelize([geotiff_test_path("srtm_52_11.tif")])
         rdd1 = rdd0.flatMap(to_pretiles)
         rdd2 = rdd1.map(grr.pretile_to_tile)
