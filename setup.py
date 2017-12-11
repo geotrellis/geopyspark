@@ -22,9 +22,10 @@ setup_args = dict(
     ],
     packages=[
         'geopyspark',
+        'geopyspark.command',
         'geopyspark.geotrellis',
         'geopyspark.geotrellis.protobuf',
-        'geopyspark.command',
+        'geopyspark.rasterio',
         'geopyspark.tests',
         'geopyspark.tests.schema_tests',
         'geopyspark.tests.tiled_layer_tests',
