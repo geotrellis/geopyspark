@@ -12,7 +12,7 @@ __all__ = ['rasterize', 'rasterize_features']
 
 
 def rasterize(geoms, crs, zoom, fill_value, cell_type=CellType.FLOAT64, options=None, num_partitions=None):
-    """Rasterizes a Shapely geometries.
+    """Rasterizes a collection of Shapely geometries.
 
     Args:
         geoms ([shapely.geometry] or (shapely.geometry) or pyspark.RDD[shapely.geometry]): Either
@@ -73,6 +73,32 @@ def rasterize_features(features,
                        options=None,
                        num_partitions=None,
                        zindex_cell_type=CellType.INT8):
+    """Rasterizes a collection of :class:`~geopyspark.vector_pipe.Feature`\s.
+
+    Args:
+        features (pyspark.RDD[Feature]): A Python ``RDD`` that
+            contains :class:`~geopyspark.vector_pipe.Feature`\s.
+
+            Note:
+                The ``properties`` of each ``Feature`` must be an instance of
+                :class:`~geopyspark.vector_pipe.CellValue`.
+        crs (str or int): The CRS of the input geometry.
+        zoom (int): The zoom level of the output raster.
+
+            Note:
+                Not all rasterized ``Feature``\s may be present in the resulting layer
+                if the ``zoom`` is not high enough.
+        cell_type (str or :class:`~geopyspark.geotrellis.constants.CellType`): Which data type the
+            cells should be when created. Defaults to ``CellType.FLOAT64``.
+        options (:class:`~geopyspark.geotrellis.RasterizerOptions`, optional): Pixel intersection options.
+        num_partitions (int, optional): The number of repartitions Spark will make when the data is
+            repartitioned. If ``None``, then the data will not be repartitioned.
+        zindex_cell_type (str or :class:`~geopyspark.geotrellis.constants.CellType`): Which data type
+            the ``Z-Index`` cells are. Defaults to ``CellType.INT8``.
+
+    Returns:
+        :class:`~geopyspark.geotrellis.layer.TiledRasterLayer`
+    """
 
     if isinstance(crs, int):
         crs = str(crs)
