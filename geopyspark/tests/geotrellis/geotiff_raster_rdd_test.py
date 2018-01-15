@@ -4,9 +4,9 @@ import rasterio
 import pytest
 import numpy as np
 
-from geopyspark.geotrellis.constants import LayerType, CellType, Partitioner
+from geopyspark.geotrellis.constants import LayerType, CellType
 from geopyspark.tests.python_test_utils import file_path
-from geopyspark.geotrellis import Extent, ProjectedExtent, Tile
+from geopyspark.geotrellis import Extent, ProjectedExtent, Tile, Partitioner
 from geopyspark.geotrellis.geotiff import get
 from geopyspark.geotrellis.layer import RasterLayer
 from geopyspark.tests.base_test_class import BaseTestClass
@@ -29,7 +29,7 @@ class GeoTiffRasterRDDTest(BaseTestClass):
 
     def test_repartition_with_partitioner(self):
         tiled = self.result.tile_to_layout()
-        repartitioned = tiled.repartition(2, Partitioner.SPATIAL_PARTITIONER)
+        repartitioned = tiled.repartition(Partitioner.create_spatial_partitioner(2))
 
         self.assertEqual(repartitioned.getNumPartitions(), 2)
 

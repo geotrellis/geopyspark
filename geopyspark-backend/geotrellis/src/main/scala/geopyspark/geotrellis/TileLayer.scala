@@ -36,6 +36,12 @@ abstract class TileLayer[K: ClassTag] {
   def keyClass: Class[_] = classTag[K].runtimeClass
   def keyClassName: String = keyClass.getName
 
+  def partitioner: String =
+    rdd.partitioner match {
+      case Some(p) => TileLayer.toPythonPartitioner(p)
+      case None => null
+    }
+
   def toPngRDD(cm: ColorMap): JavaRDD[Array[Byte]] =
     toPngRDD(rdd.mapValues { v => v.bands(0).renderPng(cm).bytes })
 
@@ -255,6 +261,12 @@ object TileLayer {
     partitioner match {
       case HASH => new HashPartitioner(partitions)
       case SPATIAL => SpatialPartitioner(partitions)
+    }
+
+  def toPythonPartitioner(partitioner: Partitioner): String =
+    partitioner match {
+      case hp: HashPartitioner => HASH
+      case sp: SpatialPartitioner[_] => SPATIAL
     }
 
   def combineBands[K: ClassTag, L <: TileLayer[K]: ClassTag](

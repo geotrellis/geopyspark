@@ -2,7 +2,12 @@
 from py4j.java_gateway import JavaClass
 from py4j.protocol import register_input_converter
 
-from geopyspark.geotrellis import RasterizerOptions, GlobalLayout, LocalLayout, CellType, LayoutDefinition
+from geopyspark.geotrellis import (RasterizerOptions,
+                                   GlobalLayout,
+                                   LocalLayout,
+                                   CellType,
+                                   LayoutDefinition,
+                                   Partitioner)
 from geopyspark.geotrellis.constants import ResampleMethod
 
 
@@ -100,9 +105,22 @@ class LayoutDefinitionConverter:
 
         return ScalaLayoutDefinition(extent, tile_layout)
 
+class PartitionerConverter:
+    def can_convert(self, object):
+        return isinstance(object, Partitioner)
+
+    def convert(self, obj, gateway_client):
+        num_partitions = obj.num_partitions
+        partitioner = obj.partitioner
+
+        TileLayer = JavaClass("geopyspark.geotrellis.TileLayer", gateway_client)
+
+        return TileLayer.getPartitioner(num_partitions, partitioner)
+
 
 register_input_converter(CellTypeConverter(), prepend=True)
 register_input_converter(RasterizerOptionsConverter(), prepend=True)
 register_input_converter(LayoutTypeConverter(), prepend=True)
 register_input_converter(ResampleMethodConverter(), prepend=True)
 register_input_converter(LayoutDefinitionConverter(), prepend=True)
+register_input_converter(PartitionerConverter(), prepend=True)

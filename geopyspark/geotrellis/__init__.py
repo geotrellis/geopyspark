@@ -494,6 +494,53 @@ class Bounds(namedtuple("Bounds", 'minKey maxKey')):
         return {'minKey': min_key_dict, 'maxKey': max_key_dict}
 
 
+class Partitioner(namedtuple("Partitioner", 'partitioner num_partitions')):
+    """Represents the ``Partitioner`` of a layer.
+
+    There are currently two different types of partitioners:
+        - ``HashPartitioner`` which is Spark's ``org.apache.spark.HashPartitioner``
+        - ``SpatialPartitioner`` which partitions data based on they key of each element
+            such that elements that are next to each other will be in the same partition.
+
+    Args:
+        partitioner (str): The name of the ``Partitioner``. Can be either ``HashPartitioner`` or
+            ``SpatialPartitioner``.
+        num_partitions (int): The number of partitions the resulting ``Partitioner`` should have.
+
+    Returns:
+        :class:`~geopyspark.geotrellis.Partitioner`
+    """
+
+    __slots__ = []
+
+    @classmethod
+    def create_hash_partitioner(cls, num_partitions):
+        """Creates a ``Partitioner`` that uses Spark's ``org.apache.spark.HashPartitioner``.
+
+        Args:
+            num_partitions (int): The number of partitions the resulting ``Partitioner`` should have.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.Partitioner`
+        """
+
+        return cls('HashPartitioner', num_partitions)
+
+    @classmethod
+    def create_spatial_partitioner(cls, num_partitions):
+        """Creates a ``Partitioner`` that will partition each ``Tile`` in the layer
+        by its key so that ``Tile``\s that are next to each other will be in the same partition.
+
+        Args:
+            num_partitions (int): The number of partitions the resulting ``Partitioner`` should have.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.Partitioner`
+        """
+
+        return cls('SpatialPartitioner', num_partitions)
+
+
 class Metadata(object):
     """Information of the values within a ``RasterLayer`` or ``TiledRasterLayer``.
     This data pertains to the layout and other attributes of the data within the classes.

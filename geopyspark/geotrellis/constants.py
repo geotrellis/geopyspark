@@ -291,15 +291,3 @@ class Unit(Enum):
 
     METERS = "Meters"
     FEET = "Feet"
-
-
-class Partitioner(Enum):
-    """Partitioners to reparttion a layer.
-
-    There are currently two supported Partitioners:
-        - ``HASH_PARTITIONER`` Spark's HashPartitioner
-        - ``SPATIAL_PARTITIONER`` partitions data based on they key of each element.
-    """
-
-    HASH_PARTITIONER = "HashPartitioner"
-    SPATIAL_PARTITIONER = "SpatialPartitioner"

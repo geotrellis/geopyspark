@@ -121,9 +121,15 @@ class SpatialTiledRasterLayer(
     SpatialTiledRasterLayer(zoom, tileLayer)
   }
 
-  def pyramid(resampleMethod: ResampleMethod, partitioner: String): Array[TiledRasterLayer[SpatialKey]] = {
+  def pyramid(resampleMethod: ResampleMethod, partitioner: Partitioner): Array[TiledRasterLayer[SpatialKey]] = {
     require(! rdd.metadata.bounds.isEmpty, "Can not pyramid an empty RDD")
-    val part = TileLayer.getPartitioner(rdd.partitions.length, partitioner)
+
+    val part =
+      partitioner match {
+        case null => None
+        case p: Partitioner => Some(p)
+      }
+
     val (baseZoom, scheme) =
       zoomLevel match {
         case Some(zoom) =>
@@ -147,7 +153,8 @@ class SpatialTiledRasterLayer(
     neighborhood: String,
     param1: Double,
     param2: Double,
-    param3: Double
+    param3: Double,
+    partitioner: Partitioner
   ): TiledRasterLayer[SpatialKey] = {
     val singleTileLayerRDD: TileLayerRDD[SpatialKey] = TileLayerRDD(
       rdd.mapValues({ v => v.band(0) }),
@@ -163,7 +170,14 @@ class SpatialTiledRasterLayer(
     val cellSize = rdd.metadata.layout.cellSize
     val op: ((Tile, Option[GridBounds]) => Tile) = getOperation(operation, _neighborhood, cellSize, param1)
 
-    val result: TileLayerRDD[SpatialKey] = FocalOperation(singleTileLayerRDD, _neighborhood)(op)
+    val targetPartitioner: Option[Partitioner] =
+      partitioner match {
+        case null => None
+        case p: Partitioner => Some(p)
+      }
+
+    val result: TileLayerRDD[SpatialKey] =
+      FocalOperation(singleTileLayerRDD, _neighborhood, targetPartitioner)(op)
 
     val multibandRDD: MultibandTileLayerRDD[SpatialKey] =
       MultibandTileLayerRDD(result.mapValues{ x => MultibandTile(x) }, result.metadata)

@@ -66,9 +66,9 @@ abstract class RasterLayer[K](implicit ev0: ClassTag[K], ev1: Component[K, Proje
   protected def reproject(targetCRS: String, layoutDefinition: LayoutDefinition, resampleMethod: ResampleMethod): TiledRasterLayer[_]
   protected def withRDD(result: RDD[(K, MultibandTile)]): RasterLayer[K]
 
-  def merge(numPartitions: Integer, partitioner: String): RasterLayer[K] =
-    numPartitions match {
-      case i: Integer => withRDD(rdd.merge(Some(TileLayer.getPartitioner(i, partitioner))))
+  def merge(partitioner: Partitioner): RasterLayer[K] =
+    partitioner match {
+      case p: Partitioner => withRDD(rdd.merge(Some(p)))
       case null => withRDD(rdd.merge())
     }
 }

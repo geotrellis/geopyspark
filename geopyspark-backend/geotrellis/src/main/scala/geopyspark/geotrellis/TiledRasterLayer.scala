@@ -58,8 +58,11 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
   def rdd: RDD[(K, MultibandTile)] with Metadata[TileLayerMetadata[K]]
   def zoomLevel: Option[Int]
 
-  def repartition(numPartitions: Int, partitioner: String): TiledRasterLayer[K] =
-    withRDD(rdd.partitionBy(TileLayer.getPartitioner(numPartitions, partitioner)))
+  def repartition(partitioner: Partitioner): TiledRasterLayer[K] =
+    withRDD(rdd.partitionBy(partitioner))
+
+  def repartition(numPartitions: Int): TiledRasterLayer[K] =
+    withRDD(rdd.repartition(numPartitions))
 
   def bands(band: Int): TiledRasterLayer[K] =
     withRDD(rdd.mapValues { multibandTile => multibandTile.subsetBands(band) })
@@ -119,14 +122,15 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
     resampleMethod: ResampleMethod
   ): TiledRasterLayer[K]
 
-  def pyramid(resampleMethod: ResampleMethod, partitioner: String): Array[_] // Array[TiledRasterLayer[K]]
+  def pyramid(resampleMethod: ResampleMethod, partitioner: Partitioner): Array[_] // Array[TiledRasterLayer[K]]
 
   def focal(
     operation: String,
     neighborhood: String,
     param1: Double,
     param2: Double,
-    param3: Double
+    param3: Double,
+    partitioner: Partitioner
   ): TiledRasterLayer[K]
 
   def slope(zFactorCalculator: ZFactorCalculator): TiledRasterLayer[K]
@@ -378,14 +382,15 @@ abstract class TiledRasterLayer[K: SpatialComponent: JsonFormat: ClassTag: Bound
     withRDD(result.mapValues { tiles => MultibandTile(tiles) } )
   }
 
-  def merge(numPartitions: Integer, partitioner: String): TiledRasterLayer[K] =
-    numPartitions match {
-      case i: Integer => withRDD(
-        ContextRDD(
-          rdd
-            .asInstanceOf[RDD[(K, MultibandTile)]]
-            .merge(Some(TileLayer.getPartitioner(i, partitioner))),
-            rdd.metadata
+  def merge(partitioner: Partitioner): TiledRasterLayer[K] =
+    partitioner match {
+      case p: Partitioner =>
+        withRDD(
+          ContextRDD(
+            rdd
+              .asInstanceOf[RDD[(K, MultibandTile)]]
+              .merge(Some(p)),
+              rdd.metadata
           )
         )
       case null => withRDD(ContextRDD(rdd.asInstanceOf[RDD[(K, MultibandTile)]].merge(), rdd.metadata))
