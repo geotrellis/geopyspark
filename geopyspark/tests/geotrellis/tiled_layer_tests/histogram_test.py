@@ -33,6 +33,14 @@ class HistogramTest(BaseTestClass):
     tiled = TiledRasterLayer.from_numpy_rdd(LayerType.SPATIAL, rdd, metadata)
     hist = tiled.get_histogram()
 
+    def test_dict(self):
+        dict_hist = self.hist.to_dict()
+        encoded_hist = Histogram.from_dict(dict_hist)
+
+        self.assertEqual(encoded_hist.min_max(), self.hist.min_max())
+        self.assertEqual(encoded_hist.mean(), self.hist.mean())
+        self.assertEqual(encoded_hist.bucket_count(), self.hist.bucket_count())
+
     def test_min(self):
         self.assertEqual(self.hist.min(), 1.0)
 

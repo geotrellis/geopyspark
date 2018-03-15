@@ -28,11 +28,29 @@ class Histogram(object):
 
     @classmethod
     def from_dict(cls, value):
-        """Encodes histogram as a dictionary"""
+        """Encodes histogram from a ``dict``.
+
+        Returns:
+            :class:`~geopyspark.geotrellis.histogram.Histogram`
+        """
+
         pysc = get_spark_context()
         histogram_json = json.dumps(value)
         scala_histogram = pysc._gateway.jvm.geopyspark.geotrellis.Json.readHistogram(histogram_json)
+
         return cls(scala_histogram)
+
+    def to_dict(self):
+        """Converts this ``Histogram`` instance into a ``dict``.
+
+        Returns:
+            dict
+        """
+
+        pysc = get_spark_context()
+        histogram_json = pysc._gateway.jvm.geopyspark.geotrellis.Json.writeHistogram(self.scala_histogram)
+
+        return json.loads(histogram_json)
 
     def min(self):
         """The smallest value of the histogram.
