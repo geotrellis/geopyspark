@@ -45,7 +45,7 @@ build: ${DIST-ASSEMBLY}
 pyspark: ${DIST-ASSEMBLY}
 	pyspark --jars ${DIST-ASSEMBLY} \
 		--conf spark.serializer=org.apache.spark.serializer.KryoSerializer \
-		--conf spark.kyro.registrator=geotrellis.spark.io.kyro.KryoRegistrator
+		--conf spark.kyro.registrator=geopyspark.geotools.kryo.ExpandedKryoRegistrator
 
 jupyter: ${DIST-ASSEMBLY}
 	@echo "PYSPARK_PYTHON: $${PYSPARK_PYTHON}"

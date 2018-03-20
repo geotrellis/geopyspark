@@ -1,5 +1,5 @@
 GeoPySpark
-***********
+**********
 .. image:: https://travis-ci.org/locationtech-labs/geopyspark.svg?branch=master
    :target: https://travis-ci.org/locationtech-labs/geopyspark
 
@@ -10,17 +10,17 @@ GeoPySpark
 GeoPySpark is a Python bindings library for `GeoTrellis <http://geotrellis.io>`_, a Scala
 library for working with geospatial data in a distributed environment.
 By using `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_, GeoPySpark is
-able to provide na interface into the GeoTrellis framework.
+able to provide an interface into the GeoTrellis framework.
 
 A Quick Example
-----------------
+---------------
 
 Here is a quick example of GeoPySpark. In the following code, we take NLCD data
 of the state of Pennsylvania from 2011, and do a masking operation on it with
 a Polygon that represents an area of interest. This masked layer is then saved.
 
 If you wish to follow along with this example, you will need to download the
-NLCD data and unzip it.. Running these two commands will complete these tasks
+NLCD data and unzip it. Running these two commands will complete these tasks
 for you:
 
 .. code:: console
@@ -67,7 +67,7 @@ for you:
 
 
 Contact and Support
---------------------
+-------------------
 
 If you need help, have questions, or like to talk to the developers (let us
 know what you're working on!) you contact us at:
@@ -82,10 +82,10 @@ channel as a means of contact. However, we will form our own if there is a need
 for it.
 
 Setup
-------
+-----
 
 GeoPySpark Requirements
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 ============ ============
 Requirement  Version
@@ -112,13 +112,13 @@ If the return is a path leading to your Spark folder, then it means that Spark
 has been configured correctly.
 
 How to Install
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 Before installing, check the above table to make sure that the
 requirements are met.
 
 Installing From Pip
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 To install via ``pip`` open the terminal and run the following:
 
@@ -132,7 +132,7 @@ downloads the backend, jar file. If no path is given when downloading the jar,
 then it will be downloaded to wherever GeoPySpark was installed at.
 
 What's With That Weird Pip Install?
-====================================
+===================================
 
 "What's with that weird pip install?", you may be asking yourself. The reason
 for its unusualness is due to how GeoPySpark functions. Because this library
@@ -149,7 +149,7 @@ Note:
   download of the jar.
 
 Installing From Source
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 If you would rather install from source, clone the GeoPySpark repo and enter it.
 
@@ -159,7 +159,7 @@ If you would rather install from source, clone the GeoPySpark repo and enter it.
    cd geopyspark
 
 Installing For Users
-=====================
+====================
 
 .. code:: console
 
@@ -173,7 +173,7 @@ Note:
   not work the way it was intended.
 
 Installing For Developers
-===========================
+=========================
 
 .. code:: console
 
@@ -186,7 +186,7 @@ Meaning any changes to the source files will also appear in your system
 installation.
 
 Installing to a Virtual Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A third option is to install GeoPySpark in a virtual environment. To get things
 started, enter the environment and run the following:
@@ -203,14 +203,14 @@ a bit weird with GeoPySpark. This is why you need to export the
 ``PYTHONPATH`` before installing to ensure that it performs correctly.
 
 Installing For Users
-=====================
+====================
 
 .. code:: console
 
    make virtual-install
 
 Installing For Developers
-===========================
+=========================
 
 .. code:: console
 
@@ -219,9 +219,9 @@ Installing For Developers
 
 
 Developing GeoPySpark With GeoNotebook
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Note**: Before begining this section, it should be noted that python-mapnik,
+**Note**: Before beginning this section, it should be noted that python-mapnik,
 a dependency for GeoNotebook, has been found to be difficult to install. If
 problems are encountered during installation, a possible work around would be
 to run ``make wheel`` and then do ``docker cp`` the ``wheel`` into the
@@ -278,7 +278,7 @@ GeoNotebook/GeoTrellis integration in currently in active development and not pa
 The latest development is on a ``feature/geotrellis`` branch at ``<https://github.com/geotrellis/geonotebook>``.
 
 Side Note For Developers
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 An optional (but recommended!) step for developers is to place these
 two lines of code at the top of your notebooks.
@@ -321,7 +321,7 @@ will not work.
 
 
 Running GeoPySpark Tests
--------------------------
+------------------------
 
 GeoPySpark uses the `pytest <https://docs.pytest.org/en/latest/>`_ testing
 framework to run its unittests. If you wish to run GeoPySpark's unittests,

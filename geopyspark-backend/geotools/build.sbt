@@ -7,6 +7,7 @@ libraryDependencies ++= Seq(
   "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-geotools"   % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-shapefile"  % Version.geotrellis,
+  "org.locationtech.geomesa"    %% "geomesa-spark-core"    % Version.geomesa,
   "de.javakaffee" % "kryo-serializers" % "0.38" exclude("com.esotericsoftware", "kryo")
 )
 
