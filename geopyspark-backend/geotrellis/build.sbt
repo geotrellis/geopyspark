@@ -1,4 +1,4 @@
-name := "geotrellis-backend"
+name := "geotrellis"
 
 libraryDependencies ++= Seq(
   "org.typelevel"               %% "cats"                  % "0.9.0",
@@ -9,8 +9,7 @@ libraryDependencies ++= Seq(
   "org.apache.commons"          % "commons-math3"          % "3.6.1",
   "org.locationtech.geotrellis" %% "geotrellis-s3"         % Version.geotrellis,
   "org.locationtech.geotrellis" %% "geotrellis-s3-testkit" % Version.geotrellis,
-  "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis,
-  "org.locationtech.geomesa"    %% "geomesa-spark-core"    % Version.geomesa
+  "org.locationtech.geotrellis" %% "geotrellis-spark"      % Version.geotrellis
 )
 
 assemblyShadeRules in assembly := {

@@ -6,15 +6,15 @@ rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst 
 
 JAR-PATH := geopyspark/jars
 
-ASSEMBLYNAME := geotrellis-backend-assembly-0.3.0.jar
-BUILD-ASSEMBLY := geopyspark-backend/geotrellis/target/scala-2.11/${ASSEMBLYNAME}
+ASSEMBLYNAME := geopyspark-backend-assembly-0.3.0.jar
+BUILD-ASSEMBLY := geopyspark-backend/geopyspark/target/scala-2.11/${ASSEMBLYNAME}
 DIST-ASSEMBLY := ${JAR-PATH}/${ASSEMBLYNAME}
 
 WHEELNAME := geopyspark-0.3.0-py3-none-any.whl
 WHEEL := dist/${WHEELNAME}
 
-SCALA_SRC := $(call rwildcard, geopyspark-backend/geotrellis/src/, *.scala)
-SCALA_BLD := $(wildcard geopyspark-backend/project/*) geopyspark-backend/build.sbt geopyspark-backend/geotrellis/build.sbt
+SCALA_SRC := $(call rwildcard, geopyspark-backend/geopyspark/src/, *.scala)
+SCALA_BLD := $(wildcard geopyspark-backend/project/*) geopyspark-backend/build.sbt geopyspark-backend/geopyspark/build.sbt
 PYTHON_SRC := $(call rwildcard, geopyspark/, *.py)
 
 export PYSPARK_SUBMIT_ARGS := --master local[*] --driver-memory 8G --jars ${PWD}/${DIST-ASSEMBLY} \
@@ -32,7 +32,7 @@ ${DIST-ASSEMBLY}: ${BUILD-ASSEMBLY}
 	cp -f ${BUILD-ASSEMBLY} ${DIST-ASSEMBLY}
 
 ${BUILD-ASSEMBLY}: ${SCALA_SRC} ${SCALA_BLD}
-	(cd geopyspark-backend && ./sbt "project geotrellis-backend" assembly)
+	(cd geopyspark-backend && ./sbt "project geopyspark" assembly)
 
 ${WHEEL}: ${DIST-ASSEMBLY} ${PYTHON_SRC} setup.py
 	rm -rf build/

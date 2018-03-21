@@ -156,7 +156,7 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
         py_files = pyspark_lib_zips + process_executor_packages(install_requires)
 
         conf.set(key='spark.yarn.dist.jars', value=jar_string)
-        conf.set(key='spark.yarn.dist.files', ','.join(py_files))
+        conf.set(key='spark.yarn.dist.files', value=','.join(py_files))
         conf.setExecutorEnv('PYTHONPATH', ":".join(map(os.path.basename, py_files)))
         conf.setExecutorEnv('PYSPARK_PYTHON', sys.executable)
 
