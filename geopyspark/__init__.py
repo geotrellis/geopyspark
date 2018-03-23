@@ -50,6 +50,79 @@ def create_python_rdd(jrdd, serializer):
         return RDD(jrdd, pysc, AutoBatchedSerializer(serializer))
 
 
+
+def _ensure_callback_gateway_initialized(gw):
+    """ Ensure that python callback gateway is started and configured.
+    Source: ``pyspark/streaming/context.py`` in ``StreamingContext._ensure_initialized``
+    """
+    # start callback server
+    # getattr will fallback to JVM, so we cannot test by hasattr()
+    if "_callback_server" not in gw.__dict__ or gw._callback_server is None:
+        gw.callback_server_parameters.eager_load = True
+        gw.callback_server_parameters.daemonize = True
+        gw.callback_server_parameters.daemonize_connections = True
+        gw.callback_server_parameters.port = 0
+        gw.start_callback_server(gw.callback_server_parameters)
+        cbport = gw._callback_server.server_socket.getsockname()[1]
+        gw._callback_server.port = cbport
+        # gateway with real port
+        gw._python_proxy_port = gw._callback_server.port
+        # get the GatewayServer object in JVM by ID
+        jgws = JavaObject("GATEWAY_SERVER", gw._gateway_client)
+        # update the port of CallbackClient with real port
+        jgws.resetCallbackClient(jgws.getCallbackClient().getAddress(), gw._python_proxy_port)
+
+
+def process_spark_home():
+    spark_home = os.environ.get('SPARK_HOME', None)
+    assert spark_home is not None, 'unable to resolve SPARK_HOME'
+    assert os.path.isdir(spark_home), '%s is not a directory' % spark_home
+    return spark_home
+
+
+def process_executor_packages(executor_packages):
+    version_info = sys.version_info
+    tmp_path = os.path.join(tempfile.gettempdir(), 'spark-python-%s.%s' % (version_info.major, version_info.minor))
+    if not os.path.isdir(tmp_path):
+        os.makedirs(tmp_path)
+    driver_packages = {module for _, module, package in pkgutil.iter_modules() if package is True}
+    executor_files = []
+    for executor_package in executor_packages:
+
+        if executor_package not in driver_packages:
+            raise ImportError('unable to locate ' + executor_package + ' installed in driver')
+
+        package = sys.modules.get(executor_package, None)
+        if package is None:
+            package = pkgutil.get_loader(executor_package).load_module(executor_package)
+
+        package_path = os.path.dirname(package.__file__)
+        package_root = os.path.dirname(package_path)
+
+        if package_root[-4:].lower() in PACKAGE_EXTENSIONS:
+            executor_files.append(package_root)
+        elif os.path.isdir(package_root):
+            package_version = getattr(package, '__version__', getattr(package, 'VERSION', None))
+            zip_name = "%s.zip" % executor_package if package_version is None \
+                else "%s-%s.zip" % (executor_package, package_version)
+            zip_path = os.path.join(tmp_path, zip_name)
+            if not os.path.isfile(zip_path):
+                zip_package(package_path, zip_path)
+            executor_files.append(zip_path)
+
+    return executor_files
+
+
+def zip_package(package_path, zip_path):
+    path_offset = len(os.path.dirname(package_path)) + 1
+    with zipfile.PyZipFile(zip_path, 'w') as writer:
+        for root, _, files in os.walk(package_path):
+            for file in files:
+                full_path = os.path.join(root, file)
+                archive_path = full_path[path_offset:]
+                writer.write(full_path, archive_path)
+
+
 def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     """Construct the base SparkConf for use with GeoPySpark.  This configuration
     object may be used as is , or may be adjusted according to the user's needs.
@@ -131,7 +204,7 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
     if master == 'yarn':
         os.environ['PYSPARK_PYTHON'] = sys.executable
 
-        spark_home = process_spark_home(spark_home)
+        spark_home = process_spark_home()
 
         # TODO: Better way to get this?
         install_requires=[
@@ -161,80 +234,6 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
         conf.setExecutorEnv('PYSPARK_PYTHON', sys.executable)
 
     return conf
-
-
-def _ensure_callback_gateway_initialized(gw):
-    """ Ensure that python callback gateway is started and configured.
-    Source: ``pyspark/streaming/context.py`` in ``StreamingContext._ensure_initialized``
-    """
-    # start callback server
-    # getattr will fallback to JVM, so we cannot test by hasattr()
-    if "_callback_server" not in gw.__dict__ or gw._callback_server is None:
-        gw.callback_server_parameters.eager_load = True
-        gw.callback_server_parameters.daemonize = True
-        gw.callback_server_parameters.daemonize_connections = True
-        gw.callback_server_parameters.port = 0
-        gw.start_callback_server(gw.callback_server_parameters)
-        cbport = gw._callback_server.server_socket.getsockname()[1]
-        gw._callback_server.port = cbport
-        # gateway with real port
-        gw._python_proxy_port = gw._callback_server.port
-        # get the GatewayServer object in JVM by ID
-        jgws = JavaObject("GATEWAY_SERVER", gw._gateway_client)
-        # update the port of CallbackClient with real port
-        jgws.resetCallbackClient(jgws.getCallbackClient().getAddress(), gw._python_proxy_port)
-
-
-def process_spark_home(spark_home):
-    if spark_home is None:
-        spark_home = os.environ.get('SPARK_HOME', None)
-    assert spark_home is not None, 'unable to resolve SPARK_HOME'
-    assert os.path.isdir(spark_home), '%s is not a directory' % spark_home
-    os.environ['SPARK_HOME'] = spark_home
-    return spark_home
-
-
-def process_executor_packages(executor_packages):
-    version_info = sys.version_info
-    tmp_path = os.path.join(tempfile.gettempdir(), 'spark-python-%s.%s' % (version_info.major, version_info.minor))
-    if not os.path.isdir(tmp_path):
-        os.makedirs(tmp_path)
-    driver_packages = {module for _, module, package in pkgutil.iter_modules() if package is True}
-    executor_files = []
-    for executor_package in executor_packages:
-
-        if executor_package not in driver_packages:
-            raise ImportError('unable to locate ' + executor_package + ' installed in driver')
-
-        package = sys.modules.get(executor_package, None)
-        if package is None:
-            package = pkgutil.get_loader(executor_package).load_module(executor_package)
-
-        package_path = os.path.dirname(package.__file__)
-        package_root = os.path.dirname(package_path)
-
-        if package_root[-4:].lower() in PACKAGE_EXTENSIONS:
-            executor_files.append(package_root)
-        elif os.path.isdir(package_root):
-            package_version = getattr(package, '__version__', getattr(package, 'VERSION', None))
-            zip_name = "%s.zip" % executor_package if package_version is None \
-                else "%s-%s.zip" % (executor_package, package_version)
-            zip_path = os.path.join(tmp_path, zip_name)
-            if not os.path.isfile(zip_path):
-                zip_package(package_path, zip_path)
-            executor_files.append(zip_path)
-
-    return executor_files
-
-
-def zip_package(package_path, zip_path):
-    path_offset = len(os.path.dirname(package_path)) + 1
-    with zipfile.PyZipFile(zip_path, 'w') as writer:
-        for root, _, files in os.walk(package_path):
-            for file in files:
-                full_path = os.path.join(root, file)
-                archive_path = full_path[path_offset:]
-                writer.write(full_path, archive_path)
 
 
 __all__ = ['geopyspark_conf']
