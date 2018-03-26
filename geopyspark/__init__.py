@@ -213,6 +213,7 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
             'shapely>=1.6b3',
             'pytz',
             'python-dateutil>=2.6.1',
+            'pyspark',
             'geopyspark'
         ]
 

@@ -19,7 +19,8 @@ setup_args = dict(
         'numpy>=1.8',
         'shapely>=1.6b3',
         'pytz',
-        'python-dateutil>=2.6.1'
+        'python-dateutil>=2.6.1',
+        'pyspark'
     ],
     packages=[
         'geopyspark',
