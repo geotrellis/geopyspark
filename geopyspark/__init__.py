@@ -80,41 +80,38 @@ def process_spark_home():
     return spark_home
 
 
+from zipimport import zipimporter
 def process_executor_packages(executor_packages):
     version_info = sys.version_info
     tmp_path = os.path.join(tempfile.gettempdir(), 'spark-python-%s.%s' % (version_info.major, version_info.minor))
     if not os.path.isdir(tmp_path):
         os.makedirs(tmp_path)
-    driver_packages = {module for _, module, package in pkgutil.iter_modules() if package is True}
+    #driver_packages = {module for _, module, package in pkgutil.iter_modules() if package is True}
     executor_files = []
+
     for executor_package in executor_packages:
-        #
-        # if executor_package not in driver_packages:
-        #     raise ImportError('unable to locate ' + executor_package + ' installed in driver')
-
-        package = sys.modules.get(executor_package, None)
-        if package is None:
-            package = pkgutil.get_loader(executor_package).load_module(executor_package)
-
-        package_path = os.path.dirname(package.__file__)
-        package_root = os.path.dirname(package_path)
-
-        if package_root[-4:].lower() in PACKAGE_EXTENSIONS:
+        loader = pkgutil.get_loader(executor_package)
+        if isinstance(loader, zipimporter):
+            package_root = loader.archive
             executor_files.append(package_root)
-        elif os.path.isdir(package_root):
-            package_version = getattr(package, '__version__', getattr(package, 'VERSION', None))
-            zip_name = "%s.zip" % executor_package if package_version is None \
-                else "%s-%s.zip" % (executor_package, package_version)
-            zip_path = os.path.join(tmp_path, zip_name)
-            if not os.path.isfile(zip_path):
-                zip_package(package_path, zip_path)
-            executor_files.append(zip_path)
-
+        else:
+            package_path = os.path.dirname(loader.path)
+            package_root = os.path.dirname(package_path)
+            for _ in range(executor_package.count('.')):
+                package_root = os.path.dirname(package_root)
+            if os.path.isdir(package_root):
+                package_version = None #getattr(package, '__version__', getattr(package, 'VERSION', None))
+                zip_name = "%s.zip" % executor_package if package_version is None \
+                    else "%s-%s.zip" % (executor_package, package_version)
+                zip_path = os.path.join(tmp_path, zip_name)
+                if not os.path.isfile(zip_path):
+                    zip_package(package_root, package_path, zip_path)
+                executor_files.append(zip_path)
     return executor_files
 
 
-def zip_package(package_path, zip_path):
-    path_offset = len(os.path.dirname(package_path)) + 1
+def zip_package(package_root, package_path, zip_path):
+    path_offset = len(package_root) + 1
     with zipfile.PyZipFile(zip_path, 'w') as writer:
         for root, _, files in os.walk(package_path):
             for file in files:
@@ -208,11 +205,11 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
 
         # TODO: Better way to get this?
         install_requires=[
-            'google.protobuf>=3.3.0',
-            'numpy>=1.8',
-            'shapely>=1.6b3',
+            'google.protobuf',
+            'numpy',
+            'shapely',
             'pytz',
-            'python-dateutil>=2.6.1',
+            'dateutil',
             'pyspark',
             'geopyspark'
         ]
