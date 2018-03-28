@@ -88,9 +88,9 @@ def process_executor_packages(executor_packages):
     driver_packages = {module for _, module, package in pkgutil.iter_modules() if package is True}
     executor_files = []
     for executor_package in executor_packages:
-
-        if executor_package not in driver_packages:
-            raise ImportError('unable to locate ' + executor_package + ' installed in driver')
+        #
+        # if executor_package not in driver_packages:
+        #     raise ImportError('unable to locate ' + executor_package + ' installed in driver')
 
         package = sys.modules.get(executor_package, None)
         if package is None:
@@ -208,7 +208,7 @@ def geopyspark_conf(master=None, appName=None, additional_jar_dirs=[]):
 
         # TODO: Better way to get this?
         install_requires=[
-            'protobuf>=3.3.0',
+            'google.protobuf>=3.3.0',
             'numpy>=1.8',
             'shapely>=1.6b3',
             'pytz',
