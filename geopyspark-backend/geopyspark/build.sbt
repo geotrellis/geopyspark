@@ -1,7 +1,7 @@
 name := "geopyspark"
 
 libraryDependencies ++= Seq(
-  "org.locationtech.geomesa" %% "geomesa-spark-core" % Version.geomesa
+  "org.locationtech.geomesa" %% "geomesa-spark-core" % Version.geomesa % "provided"
 )
 
 assemblyMergeStrategy in assembly := {

@@ -4,13 +4,14 @@ export ASSEMBLED="assembled"
 
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
+GPS-VERSION := 0.3.0.gm.1
 JAR-PATH := geopyspark/jars
 
-ASSEMBLYNAME := geopyspark-assembly-0.3.0.jar
+ASSEMBLYNAME := geopyspark-assembly-${GPS-VERSION}.jar
 BUILD-ASSEMBLY := geopyspark-backend/geopyspark/target/scala-2.11/${ASSEMBLYNAME}
 DIST-ASSEMBLY := ${JAR-PATH}/${ASSEMBLYNAME}
 
-WHEELNAME := geopyspark-0.3.0-py3-none-any.whl
+WHEELNAME := geopyspark-${GPS-VERSION}-py3-none-any.whl
 WHEEL := dist/${WHEELNAME}
 
 SCALA_SRC := $(call rwildcard, geopyspark-backend/geopyspark/src/, *.scala)
@@ -40,7 +41,7 @@ ${WHEEL}: ${DIST-ASSEMBLY} ${PYTHON_SRC} setup.py
 
 wheel: ${WHEEL}
 
-build: ${DIST-ASSEMBLY}
+build: clean ${DIST-ASSEMBLY}
 
 pyspark: ${DIST-ASSEMBLY}
 	pyspark --jars ${DIST-ASSEMBLY} \
