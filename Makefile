@@ -4,7 +4,7 @@ export ASSEMBLED="assembled"
 
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
-GPS-VERSION := 0.3.0.gm.1
+GPS-VERSION := 0.3.0.gm.2
 JAR-PATH := geopyspark/jars
 
 ASSEMBLYNAME := geopyspark-assembly-${GPS-VERSION}.jar
