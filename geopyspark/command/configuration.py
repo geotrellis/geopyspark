@@ -9,7 +9,7 @@ import argparse
 
 from geopyspark.geopyspark_constants import JAR, CWD, VERSION
 
-# https://github.com/aheyne/geopyspark/releases/download/v0.3.0.gm.2/geopyspark-assembly-0.3.0.gm.2.jar
+# https://github.com/aheyne/geopyspark/releases/download/v0.3.0.gm.3/geopyspark-assembly-0.3.0.gm.3.jar
 #JAR_URL = 'https://github.com/locationtech-labs/geopyspark/releases/download/v0.3.0/' + JAR
 JAR_URL = 'https://github.com/aheyne/geopyspark/releases/download/v' + VERSION + '/' + JAR
 DEFAULT_JAR_PATH = path.join(CWD, 'jars')

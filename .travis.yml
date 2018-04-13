@@ -65,7 +65,7 @@ script:
 
 before_deploy:
   - export GEOPYSPARK_VERSION_SUFFIX="-${TRAVIS_COMMIT:0:7}"
-  - aws s3 rm s3://geopyspark-dependency-jars/geopyspark-assembly-0.3.0.gm.2.jar
+  - aws s3 rm s3://geopyspark-dependency-jars/geopyspark-assembly-0.3.0.gm.3.jar
 
 deploy:
   - provider: script
