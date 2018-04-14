@@ -82,7 +82,7 @@ class GeometryUDT(UserDefinedType):
 
     def deserialize(self, datum):
         jvm = get_spark_context()._gateway.jvm
-        return jvm.JavaGeometryUDT.deserialize(datum[0])
+        return jvm.JavaAbstractGeometryUDT.deserialize(datum[0])
 
 
 __all__ = ['GeoMesaSpark', 'SpatialRDDProvider', 'GeometryUDT']
