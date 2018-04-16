@@ -24,7 +24,7 @@ class GeoMesaSpark(object):
         java_import(self.jvm, "org.locationtech.geomesa.spark.api.java.JavaGeoMesaSpark")
         java_import(self.jvm, "org.locationtech.geomesa.spark.api.java.JavaSpatialRDDProvider")
         java_import(self.jvm, "org.locationtech.geomesa.spark.api.java.JavaSpatialRDD")
-        java_import(self.jvm, "org.locationtech.geomesa.spark.jts.util.JavaGeometryUDT")
+
 
     def apply(self, params):
         provider = self.jvm.JavaGeoMesaSpark.apply(params)
@@ -82,6 +82,7 @@ class GeometryUDT(UserDefinedType):
 
     def deserialize(self, datum):
         jvm = get_spark_context()._gateway.jvm
+        java_import(jvm, "org.locationtech.geomesa.spark.api.java.JavaAbstractGeometryUDT")
         return jvm.JavaAbstractGeometryUDT.deserialize(datum[0])
 
 
