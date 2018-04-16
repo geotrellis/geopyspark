@@ -64,6 +64,8 @@ class SpatialRDDProvider(object):
 
 
 class GeometryUDT(UserDefinedType):
+    jvm = None
+
     @classmethod
     def sqlType(self):
         return StructField("wkb", BinaryType(), False)
@@ -82,8 +84,9 @@ class GeometryUDT(UserDefinedType):
 
     def deserialize(self, datum):
         jvm = get_spark_context()._gateway.jvm
-        java_import(jvm, "org.locationtech.geomesa.spark.api.java.JavaAbstractGeometryUDT")
+        java_import(jvm, "org.locationtech.geomesa.spark.jts.util.JavaAbstractGeometryUDT")
         return jvm.JavaAbstractGeometryUDT.deserialize(datum[0])
+
 
 
 __all__ = ['GeoMesaSpark', 'SpatialRDDProvider', 'GeometryUDT']
