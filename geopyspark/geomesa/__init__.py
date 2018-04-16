@@ -83,10 +83,10 @@ class GeometryUDT(UserDefinedType):
         return Row(obj.toBytes)
 
     def deserialize(self, datum):
-        jvm = get_spark_context()._gateway.jvm
-        java_import(jvm, "org.locationtech.geomesa.spark.jts.util.JavaAbstractGeometryUDT")
-        return jvm.JavaAbstractGeometryUDT.deserialize(datum[0])
-
+        if self.jvm is None:
+            self.jvm = get_spark_context()._gateway.jvm
+            java_import(self.jvm, "org.locationtech.geomesa.spark.jts.util.JavaAbstractGeometryUDT")
+        return self.jvm.JavaAbstractGeometryUDT.deserialize(datum[0])
 
 
 __all__ = ['GeoMesaSpark', 'SpatialRDDProvider', 'GeometryUDT']
