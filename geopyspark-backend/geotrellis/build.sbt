@@ -1,4 +1,4 @@
-name := "geotrellis-backend"
+name := "geotrellis"
 
 libraryDependencies ++= Seq(
   "org.typelevel"               %% "cats"                  % "0.9.0",

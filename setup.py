@@ -7,11 +7,11 @@ if sys.version_info < (3, 3):
 
 setup_args = dict(
     name='geopyspark',
-    version='0.3.0',
-    author='Jacob Bouffard, James McClain',
-    author_email='jbouffard@azavea.com, jmcclain@azavea.com',
+    version='0.3.0.gm.6',
+    author='Jacob Bouffard, James McClain, Austin Heyne',
+    author_email='jbouffard@azavea.com, jmcclain@azavea.com, aheyne@ccri.com',
     download_url='http://github.com/locationtech-labs/geopyspark',
-    description='Python bindings for GeoTrellis',
+    description='Python bindings for GeoTrellis and GeoMesa',
     long_description=open('README.rst').read(),
     license='LICENSE',
     install_requires=[
@@ -19,7 +19,8 @@ setup_args = dict(
         'numpy>=1.8',
         'shapely>=1.6b3',
         'pytz',
-        'python-dateutil>=2.6.1'
+        'python-dateutil>=2.6.1',
+        'pyspark>=2.1.1,<2.3.0'
     ],
     packages=[
         'geopyspark',
@@ -29,6 +30,7 @@ setup_args = dict(
         'geopyspark.vector_pipe.protobuf',
         'geopyspark.geotools',
         'geopyspark.geotools.protobuf',
+        'geopyspark.geomesa',
         'geopyspark.command',
         'geopyspark.jars'
     ],
