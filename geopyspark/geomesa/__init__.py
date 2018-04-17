@@ -79,7 +79,8 @@ class GeometryUDT(UserDefinedType):
         return 'org.apache.spark.sql.jts.GeometryUDT'
 
     def serialize(self, obj):
-        if (obj is None): return None
+        if obj is None:
+            return None
         return Row(obj.toBytes)
 
     def deserialize(self, datum):

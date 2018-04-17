@@ -6,5 +6,5 @@ setuptools
 protobuf>=3.3.0
 pytz
 python-dateutil>=2.6.1
-pyspark
+pyspark>=2.1.1,<2.3.0
 pandas

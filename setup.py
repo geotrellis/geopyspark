@@ -20,7 +20,7 @@ setup_args = dict(
         'shapely>=1.6b3',
         'pytz',
         'python-dateutil>=2.6.1',
-        'pyspark'
+        'pyspark>=2.1.1,<2.3.0'
     ],
     packages=[
         'geopyspark',
