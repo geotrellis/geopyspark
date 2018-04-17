@@ -13,10 +13,10 @@ GeoSpatial analytics platform for working with distributed geospatial data. By
 using `PySpark <http://spark.apache.org/docs/latest/api/python/pyspark.html>`_,
 GeoPySpark is able to provide an interface into the GeoTrellis and GeoMesa frameworks.
 
-A Quick Example
----------------
+GeoTrellis Example
+------------------
 
-Here is a quick example of GeoPySpark. In the following code, we take NLCD data
+Here is a quick example of GeoPySpark using GeoTrellis. In the following code, we take NLCD data
 of the state of Pennsylvania from 2011, and do a masking operation on it with
 a Polygon that represents an area of interest. This masked layer is then saved.
 
@@ -44,7 +44,7 @@ for you:
   # Read in the NLCD tif that has been saved locally.
   # This tif represents the state of Pennsylvania.
   raster_layer = gps.geotiff.get(layer_type=gps.LayerType.SPATIAL,
-                                 uri='/tmp/NLCD2011_LC_Pennsylvania.tif',
+                                 uri='file:///tmp/NLCD2011_LC_Pennsylvania.tif',
                                  num_partitions=100)
 
   # Tile the rasters within the layer and reproject them to Web Mercator.
@@ -65,6 +65,60 @@ for you:
       gps.write(uri='file:///tmp/pa-nlcd-2011',
                 layer_name='north-west-philly',
                 tiled_raster_layer=pyramid)
+
+
+GeoMesa Example
+---------------
+
+The following example demonstrates how to retrieve a Spark dataframe from a
+GeoMesa datastore for use in Python. To run this example make sure the GeoMesa
+Spark runtime jar for your database is available in geopyspark/jars. You can find
+this jar in the dist/spark directory of the GeoMesa tools distribution for your
+database backend. The following example is from GeoMesa on HBase using ingested
+GDELT data.
+
+.. code:: python
+
+   import geopyspark as gps
+
+   from pyspark import SparkContext
+   from pyspark.sql import SQLContext
+
+   conf = gps.geopyspark_conf(appName="test", master="yarn")
+   sc = SparkContext(conf=conf)
+   spark = SQLContext(sc)
+
+   params = { "hbase.catalog": "catalog" }
+   feature = "gdelt"
+
+   df = spark.read\
+       .format("geomesa")\
+       .options(**params)\
+       .option("geomesa.feature", feature)\
+       .load()
+
+   df.createOrReplaceTempView("gdelt")
+
+   spark.sql("select * from gdelt where st_contains(st_makeBBOX(0.0, 0.0, 90.0, 90.0), geom) limit 10").show()
+
+Produces the following output
+
+.. code::
+
+   +---------+--------------------+-------------------+--------------------+
+   |eventCode|          actor1Name|                dtg|                geom|
+   +---------+--------------------+-------------------+--------------------+
+   |      042|              TAIWAN|2017-01-01 00:00:00|POINT (6.73333 0....|
+   |      043|             VATICAN|2017-01-01 00:00:00|POINT (6.73333 0....|
+   |      161|SAO TOME AND PRIN...|2017-01-01 00:00:00|POINT (6.73333 0....|
+   |      042|              TAIWAN|2017-01-01 00:00:00|POINT (6.73333 0....|
+   |      043|              POLICE|2017-01-01 00:00:00|POINT (5.4851 5.4...|
+   |      160|CONSTITUTIONAL COURT|2017-01-01 00:00:00|POINT (8.78333 3.75)|
+   |      173|              PRISON|2017-01-01 00:00:00|POINT (8.78333 3.75)|
+   |      173|   EQUATORIAL GUINEA|2017-01-01 00:00:00|POINT (8.78333 3.75)|
+   |      042|            CAMEROON|2017-01-01 00:00:00|POINT (9.241 4.1527)|
+   |      051|             NIGERIA|2017-01-01 00:00:00|POINT (6.08333 4.75)|
+   +---------+--------------------+-------------------+--------------------+
 
 
 Contact and Support
@@ -94,7 +148,7 @@ Requirement  Version
 Java         >=1.8
 Scala        >=2.11
 Python       3.3 - 3.6
-Spark        >=2.1.1
+Spark        >=2.1.1,<2.3.0
 ============ ============
 
 Java 8 and Scala 2.11 are needed for GeoPySpark to work; as they are required by

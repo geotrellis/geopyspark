@@ -41,7 +41,7 @@ ${WHEEL}: ${DIST-ASSEMBLY} ${PYTHON_SRC} setup.py
 
 wheel: ${WHEEL}
 
-build: clean ${DIST-ASSEMBLY}
+build: ${DIST-ASSEMBLY}
 
 pyspark: ${DIST-ASSEMBLY}
 	pyspark --jars ${DIST-ASSEMBLY} \
