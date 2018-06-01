@@ -10,7 +10,7 @@ from pyspark.sql import SparkSession
 __all__ = ['from_orc', 'from_dataframe']
 
 
-def from_orc(source):
+def from_orc(source, cache_path=None):
     """Reads in OSM data from an orc file that is located either locally or on S3. The
     resulting data will be read in as an instance of :class:`~geopyspark.vector_pipe.features_collection.FeaturesCollection`.
 
@@ -46,11 +46,11 @@ def from_orc(source):
 
     pysc = get_spark_context()
     session = SparkSession.builder.config(conf=pysc.getConf()).enableHiveSupport().getOrCreate()
-    features = pysc._jvm.geopyspark.vectorpipe.io.OSMReader.fromORC(session._jsparkSession, source)
+    features = pysc._jvm.geopyspark.vectorpipe.io.OSMReader.fromORC(session._jsparkSession, source, cache_path)
 
     return FeaturesCollection(features)
 
-def from_dataframe(dataframe):
+def from_dataframe(dataframe, cache_path=None):
     """Reads OSM data from a Spark ``DataFrame``. The resulting data will be read
     in as an instance of :class:`~geopyspark.vector_pipe.features_collection.FeaturesCollection`.
 
@@ -62,6 +62,6 @@ def from_dataframe(dataframe):
     """
 
     pysc = get_spark_context()
-    features = pysc._jvm.geopyspark.vectorpipe.io.OSMReader.fromDataFrame(dataframe._jdf)
+    features = pysc._jvm.geopyspark.vectorpipe.io.OSMReader.fromDataFrame(dataframe._jdf, cache_path)
 
     return FeaturesCollection(features)

@@ -4,27 +4,49 @@ import geopyspark.util._
 import geopyspark.vectorpipe._
 
 import vectorpipe._
-import vectorpipe.osm._
+import vectorpipe.osm.{OSMReader => OSM}
 
 import org.apache.spark._
 import org.apache.spark.sql._
 
-import scala.util.{Failure, Success => S}
+import java.net.URI
 
 
 object OSMReader {
   def fromORC(
     ss: SparkSession,
-    source: String
+    sourcePath: String,
+    cachePath: String
   ): FeaturesCollection = {
-    val (ns, ws, rs) = osm.fromORC(source)(ss).get
-    FeaturesCollection(osm.features(ns, ws, rs))
+    val reader =
+      cachePath match {
+        case s: String => OSM(new URI(sourcePath), s)(ss)
+        case null => OSM(new URI(sourcePath))(ss)
+      }
+
+    FeaturesCollection(
+      reader.pointFeaturesRDD,
+      reader.lineFeaturesRDD,
+      reader.polygonFeaturesRDD,
+      reader.multiPolygonFeaturesRDD
+    )
   }
 
   def fromDataFrame(
-    elements: Dataset[Row]
+    elements: Dataset[Row],
+    cachePath: String
   ): FeaturesCollection = {
-    val (ns, ws, rs) = osm.fromDataFrame(elements)
-    FeaturesCollection(osm.features(ns, ws, rs))
+    val reader =
+      cachePath match {
+        case s: String => new OSM(elements, Some(new URI(s)), None)(elements.sparkSession)
+        case null => new OSM(elements, None, None)(elements.sparkSession)
+      }
+
+    FeaturesCollection(
+      reader.pointFeaturesRDD,
+      reader.lineFeaturesRDD,
+      reader.polygonFeaturesRDD,
+      reader.multiPolygonFeaturesRDD
+    )
   }
 }
