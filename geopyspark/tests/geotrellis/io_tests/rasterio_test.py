@@ -15,16 +15,16 @@ class CatalogTest(BaseTestClass):
         yield
         BaseTestClass.pysc._gateway.close()
 
-    @pytest.mark.skipif('TRAVIS' in os.environ,
-                         reason="Cannot resolve depency issues in Travis for the time being")
+    @pytest.mark.skipif('TRAVIS_PYTHON_VERSION' in os.environ.keys(),
+                        reason="Travis produces different results than local")
     def test_tiles(self):
         import geopyspark as gps
         from geopyspark.geotrellis import rasterio
         tiles = rasterio._read_windows(self.uri, xcols=256, ycols=256, bands=None, crs_to_proj4=lambda n: '+proj=longlat +datum=WGS84 +no_defs ')
         self.assertEqual(len(list(tiles)), 144)
 
-    @pytest.mark.skipif('TRAVIS' in os.environ,
-                         reason="Cannot resolve depency issues in Travis for the time being")
+    @pytest.mark.skipif('TRAVIS_PYTHON_VERSION' in os.environ.keys(),
+                        reason="Travis produces different results than local")
     def test_layer(self):
         import geopyspark as gps
         from geopyspark.geotrellis import rasterio
