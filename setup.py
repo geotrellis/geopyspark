@@ -1,6 +1,6 @@
-from setuptools import setup
-import sys
 import os
+import sys
+from setuptools import setup, find_packages
 
 if sys.version_info < (3, 3):
     sys.exit("GeoPySpark does not support Python versions before 3.3")
@@ -21,15 +21,7 @@ setup_args = dict(
         'pytz',
         'python-dateutil>=2.6.1'
     ],
-    packages=[
-        'geopyspark',
-        'geopyspark.geotrellis',
-        'geopyspark.geotrellis.protobuf',
-        'geopyspark.geotools',
-        'geopyspark.geotools.protobuf',
-        'geopyspark.command',
-        'geopyspark.jars'
-    ],
+    packages=find_packages(exclude=['tests']),
     entry_points={
         "console_scripts": ['geopyspark = geopyspark.command.configuration:main']
     },
