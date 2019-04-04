@@ -17,7 +17,8 @@ setup_args = dict(
     install_requires=[
         'protobuf>=3.3.0',
         'numpy>=1.8',
-        'shapely>=1.6b3',
+        'shapely>=1.6.4',
+        'rasterio>=1.0a7',
         'pytz',
         'python-dateutil>=2.6.1'
     ],

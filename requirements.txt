@@ -1,7 +1,7 @@
 pytest==3.0.6
 numpy>=1.8
-shapely>=1.6.4.post2
-rasterio==1.0a7
+shapely>=1.6.4
+rasterio>=1.0a7
 setuptools
 protobuf>=3.3.0
 pytz
