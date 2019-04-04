@@ -22,7 +22,7 @@ setup_args = dict(
         'pytz',
         'python-dateutil>=2.6.1'
     ],
-    packages=find_packages(exclude=['tests']),
+    packages=find_packages(exclude=['geopyspark.tests', 'geopyspark.tests.*']),
     entry_points={
         "console_scripts": ['geopyspark = geopyspark.command.configuration:main']
     },
