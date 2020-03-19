@@ -6,6 +6,7 @@ import sys
 import os
 from os import path
 import argparse
+import subprocess
 
 from geopyspark.geopyspark_constants import JAR, CWD
 
@@ -31,12 +32,14 @@ def write_jar_path(jar_path):
         f.write(jar_path)
 
 def download_jar(jar_path):
-    import subprocess
-
     jar_location = path.join(jar_path, JAR)
-    write_jar_path(jar_location)
 
-    subprocess.call(['curl', '-L', JAR_URL, '-o', jar_location])
+    print("Downloading", JAR_URL)
+    # Will raise exception when curl download fails (e.g. 404 not found)
+    subprocess.check_call(['curl', '-L', '--fail', JAR_URL, '-o', jar_location])
+    print("Downloaded to", jar_location)
+
+    write_jar_path(jar_location)
 
 def get_jar_path():
     default_jar_location = path.join(DEFAULT_JAR_PATH, JAR)
